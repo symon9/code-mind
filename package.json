@@ -1,0 +1,24 @@
+{
+  "name": "codemind-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "desktop/react",
+    "desktop/electron",
+    "backend",
+    "shared"
+  ],
+  "scripts": {
+    "dev:desktop": "concurrently --kill-others \"npm run dev --workspace=@codemind/react\" \"npm run dev --workspace=@codemind/electron\"",
+    "dev:backend": "npm run dev --workspace=@codemind/backend",
+    "build:desktop": "npm run build --workspace=@codemind/react && npm run build --workspace=@codemind/electron",
+    "build:backend": "npm run build --workspace=@codemind/backend",
+    "build": "npm run build:desktop && npm run build:backend",
+    "dev": "concurrently --kill-others \"npm run dev:desktop\" \"npm run dev:backend\"",
+    "clean": "node -e \"['desktop/react/dist', 'desktop/electron/dist', 'backend/dist'].forEach(p => require('fs').rmSync(p, { recursive: true, force: true }))\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "turbo": "^2.0.4"
+  }
+}
