@@ -1,25 +1,19 @@
 import { contextBridge, ipcRenderer } from 'electron';
+import { FileNode } from './types';
 
-// Expose protected APIs to the renderer process (React app)
-contextBridge.exposeInMainWorld('codeMindAPI', {
-  send: (channel: string, data: any) => {
-    const validChannels = ['toMain'];
-    if (validChannels.includes(channel)) {
-      ipcRenderer.send(channel, data);
-    }
+contextBridge.exposeInMainWorld('codemind', {
+  fs: {
+    readFile: (path: string): Promise<string> => ipcRenderer.invoke('fs:readFile', path),
+    writeFile: (path: string, content: string): Promise<void> =>
+      ipcRenderer.invoke('fs:writeFile', path, content),
+    openDialog: (): Promise<string[]> => ipcRenderer.invoke('fs:openDialog'),
+    openFolderDialog: (): Promise<string> => ipcRenderer.invoke('fs:openFolderDialog'),
+    saveDialog: (defaultName?: string): Promise<string> =>
+      ipcRenderer.invoke('fs:saveDialog', defaultName),
+    readDir: (path: string): Promise<FileNode[]> => ipcRenderer.invoke('fs:readDir', path),
   },
-  receive: (channel: string, func: (...args: any[]) => void) => {
-    const validChannels = ['fromMain'];
-    if (validChannels.includes(channel)) {
-      // Deliberately strip event as it includes `sender`
-      ipcRenderer.on(channel, (event, ...args) => func(...args));
-    }
+  app: {
+    getVersion: (): Promise<string> => ipcRenderer.invoke('app:getVersion'),
+    platform: (): Promise<string> => ipcRenderer.invoke('app:platform'),
   },
-  invoke: (channel: string, data: any) => {
-    const validChannels = ['get-version', 'open-directory'];
-    if (validChannels.includes(channel)) {
-      return ipcRenderer.invoke(channel, data);
-    }
-    return Promise.reject(new Error(`Invalid IPC channel: ${channel}`));
-  }
 });
