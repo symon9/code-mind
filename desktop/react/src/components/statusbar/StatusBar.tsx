@@ -1,7 +1,7 @@
 import React from 'react';
 import { useEditorStore } from '../../stores/useEditorStore';
-import { useSettingsStore } from '../../stores/useSettingsStore';
 import { getLanguageDisplayName } from '../../utils/languageMap';
+import { AIProviderSwitcher } from '../ai/AIProviderSwitcher';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -18,7 +18,6 @@ export const StatusBar: React.FC<StatusBarProps> = ({
 }) => {
   const openTabs = useEditorStore((s) => s.openTabs);
   const activeTabId = useEditorStore((s) => s.activeTabId);
-  const aiProvider = useSettingsStore((s) => s.aiProvider);
 
   const activeTab = openTabs.find((tab) => tab.id === activeTabId);
 
@@ -64,10 +63,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
       {/* Right section */}
       <div className="flex items-center gap-4 text-text-muted">
         {/* AI Provider */}
-        <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-emerald-500/80 animate-pulse" />
-          <span className="text-text-secondary capitalize">{aiProvider}</span>
-        </div>
+        <AIProviderSwitcher compact dropUp />
 
         {/* Brand */}
         <span className="text-border">│</span>

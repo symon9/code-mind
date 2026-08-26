@@ -12,6 +12,7 @@ interface AIState {
 
 interface AIActions {
   addMessage: (sessionId: string, message: ChatMessage) => void;
+  appendToLastMessage: (sessionId: string, chunk: string) => void;
   createSession: (title?: string) => string;
   setActiveSession: (id: string) => void;
   setProvider: (provider: AIProvider) => void;
@@ -56,11 +57,38 @@ export const useAIStore = create<AIStore>((set, get) => ({
 
   addMessage: (sessionId: string, message: ChatMessage) => {
     set((state) => ({
-      chatSessions: state.chatSessions.map((session) =>
-        session.id === sessionId
-          ? { ...session, messages: [...session.messages, message] }
-          : session
-      ),
+      chatSessions: state.chatSessions.map((session) => {
+        if (session.id !== sessionId) return session;
+        // Update session title automatically on first user message if title is default
+        const isFirstUserMsg = session.messages.filter((m) => m.role === 'user').length === 0 && message.role === 'user';
+        const newTitle = isFirstUserMsg ? message.content.slice(0, 24) + (message.content.length > 24 ? '…' : '') : session.title;
+        return {
+          ...session,
+          title: newTitle,
+          messages: [...session.messages, message],
+        };
+      }),
+    }));
+  },
+
+  appendToLastMessage: (sessionId: string, chunk: string) => {
+    set((state) => ({
+      chatSessions: state.chatSessions.map((session) => {
+        if (session.id !== sessionId || session.messages.length === 0) return session;
+        const lastIdx = session.messages.length - 1;
+        const lastMsg = session.messages[lastIdx];
+
+        const updatedMessages = [...session.messages];
+        updatedMessages[lastIdx] = {
+          ...lastMsg,
+          content: lastMsg.content + chunk,
+        };
+
+        return {
+          ...session,
+          messages: updatedMessages,
+        };
+      }),
     }));
   },
 

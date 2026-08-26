@@ -5,6 +5,7 @@ import { Sidebar } from '../sidebar/Sidebar';
 import { EditorArea } from '../editor/EditorArea';
 import { AIPanel } from '../ai/AIPanel';
 import { StatusBar } from '../statusbar/StatusBar';
+import { ToastContainer } from '../common/ToastContainer';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -101,6 +102,9 @@ export const AppShell: React.FC = () => {
 
       {/* Status Bar */}
       <StatusBar cursorLine={cursorLine} cursorColumn={cursorColumn} />
+
+      {/* Toast Notifications */}
+      <ToastContainer />
     </div>
   );
 };

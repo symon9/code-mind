@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { EditorTab } from '../types';
 import { detectLanguage } from '../utils/languageMap';
+import { useToastStore } from './useToastStore';
 
 // ─── Store Interface ──────────────────────────────────────────────────────────
 
@@ -110,14 +111,18 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
     if (!tab) return;
 
     try {
-      await window.codemind.fs.writeFile(tab.path, tab.content);
+      if (window.codemind?.fs?.writeFile) {
+        await window.codemind.fs.writeFile(tab.path, tab.content);
+      }
       set((state) => ({
         openTabs: state.openTabs.map((t) =>
           t.id === id ? { ...t, isDirty: false } : t
         ),
       }));
+      useToastStore.getState().addToast(`Saved ${tab.name}`, 'success');
     } catch (err) {
       console.error(`[EditorStore] Failed to save file: ${tab.path}`, err);
+      useToastStore.getState().addToast(`Failed to save ${tab.name}`, 'error');
     }
   },
 

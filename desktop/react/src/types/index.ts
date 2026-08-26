@@ -34,7 +34,7 @@ export interface ChatSession {
   createdAt: number;
 }
 
-export type AIProvider = 'openai' | 'anthropic' | 'gemini' | 'local';
+export type AIProvider = 'anthropic' | 'openai' | 'ollama' | 'gemini' | 'local';
 
 // ─── Settings ─────────────────────────────────────────────────────────────────
 

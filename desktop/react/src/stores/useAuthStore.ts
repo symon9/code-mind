@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { AuthUser } from '../types';
+import { useToastStore } from './useToastStore';
 
 // ─── Store Interface ──────────────────────────────────────────────────────────
 
@@ -26,10 +27,12 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
   login: (user: AuthUser, token: string) => {
     set({ user, token, isAuthenticated: true });
+    useToastStore.getState().addToast(`Logged in as ${user.name || user.email}`, 'success');
   },
 
   logout: () => {
     set({ user: null, token: null, isAuthenticated: false });
+    useToastStore.getState().addToast('Logged out', 'info');
   },
 
   updateUser: (updates: Partial<AuthUser>) => {
