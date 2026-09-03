@@ -17,8 +17,11 @@ jspm_packages
 # Compiler outputs
 dist
 dist-electron
+dist-build
+renderer
 build
 out
+*.tsbuildinfo
 .next
 .nuxt
 
