@@ -1,10 +1,11 @@
 appId: com.codemind.desktop
 productName: CodeMind
 directories:
-  output: dist-build
+  output: dist
   buildResources: build
 files:
   - dist/**/*
+  - renderer/**/*
   - node_modules/**/*
   - package.json
 extraResources:
@@ -17,6 +18,7 @@ win:
     - target: nsis
       arch:
         - x64
+  icon: assets/icons/icon.ico
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
@@ -26,8 +28,10 @@ mac:
       arch:
         - x64
         - arm64
+  icon: assets/icons/icon.icns
 linux:
   target:
     - target: AppImage
       arch:
         - x64
+  icon: assets/icons/icon.png

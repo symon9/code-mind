@@ -172,6 +172,10 @@ export function setupMenu(getMainWindow: () => BrowserWindow | null): Menu {
   ];
 
   const menu = Menu.buildFromTemplate(template);
-  Menu.setApplicationMenu(menu);
+  if (process.platform === 'darwin') {
+    Menu.setApplicationMenu(menu);
+  } else {
+    Menu.setApplicationMenu(null);
+  }
   return menu;
 }

@@ -1,5 +1,6 @@
 import { app, BrowserWindow } from 'electron';
 import * as path from 'path';
+import * as fs from 'fs';
 import { autoUpdater } from 'electron-updater';
 import { registerIpcHandlers } from './ipcHandlers';
 import { setupMenu } from './menu';
@@ -44,11 +45,15 @@ function setupAutoUpdater(): void {
 function createWindow(): void {
   const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
+  const iconPath = path.join(__dirname, '../assets/icons/icon.png');
+
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
     minWidth: 900,
     minHeight: 600,
+    icon: fs.existsSync(iconPath) ? iconPath : undefined,
+    autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -59,9 +64,17 @@ function createWindow(): void {
 
   if (isDev) {
     mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL || 'http://localhost:5173');
-    mainWindow.webContents.openDevTools();
+    // mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../react/dist/index.html'));
+    const rendererPath = path.join(__dirname, '../renderer/index.html');
+    const altRendererPath = path.join(__dirname, 'renderer/index.html');
+    if (fs.existsSync(rendererPath)) {
+      mainWindow.loadFile(rendererPath);
+    } else if (fs.existsSync(altRendererPath)) {
+      mainWindow.loadFile(altRendererPath);
+    } else {
+      mainWindow.loadFile(path.join(__dirname, '../react/dist/index.html'));
+    }
   }
 
   mainWindow.on('closed', () => {
