@@ -47,6 +47,7 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({ onCursorChange }) =>
   const fontFamily = useSettingsStore((s) => s.fontFamily);
   const wordWrap = useSettingsStore((s) => s.wordWrap);
   const provider = useSettingsStore((s) => s.aiProvider);
+  const theme = useSettingsStore((s) => s.theme);
 
   const setAIPanelOpen = useLayoutStore((s) => s.setAIPanelOpen);
   const addMessage = useAIStore((s) => s.addMessage);
@@ -89,6 +90,61 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({ onCursorChange }) =>
     };
   }, []);
 
+  const handleBeforeMount = useCallback((monaco: any) => {
+    // 1. CodeMind Professional Dark Theme (#0e121b background)
+    monaco.editor.defineTheme('codemind-dark', {
+      base: 'vs-dark',
+      inherit: true,
+      rules: [
+        { token: 'comment', foreground: '64748b', fontStyle: 'italic' },
+        { token: 'keyword', foreground: '93c5fd', fontStyle: 'bold' },
+        { token: 'string', foreground: '86efac' },
+        { token: 'number', foreground: 'f97316' },
+        { token: 'type', foreground: 'c084fc' },
+        { token: 'function', foreground: '38bdf8' },
+        { token: 'variable', foreground: 'f1f5f9' },
+      ],
+      colors: {
+        'editor.background': '#0e121b',
+        'editor.foreground': '#e2e8f0',
+        'editor.lineHighlightBackground': '#161f33',
+        'editorCursor.foreground': '#3b82f6',
+        'editorWhitespace.foreground': '#1e293b',
+        'editorIndentGuide.background': '#1e293b',
+        'editorIndentGuide.activeBackground': '#3b82f6',
+        'editorLineNumber.foreground': '#475569',
+        'editorLineNumber.activeForeground': '#60a5fa',
+        'editorGutter.background': '#0e121b',
+        'editorSelection.background': '#2563eb40',
+      },
+    });
+
+    // 2. Pitch Black Theme (#090c10)
+    monaco.editor.defineTheme('pitch-black', {
+      base: 'vs-dark',
+      inherit: true,
+      rules: [
+        { token: 'comment', foreground: '525252', fontStyle: 'italic' },
+        { token: 'keyword', foreground: 'A78BFA', fontStyle: 'bold' },
+        { token: 'string', foreground: '4ADE80' },
+        { token: 'number', foreground: 'FB923C' },
+        { token: 'type', foreground: '60A5FA' },
+      ],
+      colors: {
+        'editor.background': '#090c10',
+        'editor.foreground': '#e5e7eb',
+        'editor.lineHighlightBackground': '#171d27',
+        'editorCursor.foreground': '#60a5fa',
+        'editorWhitespace.foreground': '#1f2937',
+        'editorIndentGuide.background': '#1f2937',
+        'editorIndentGuide.activeBackground': '#60a5fa',
+        'editorLineNumber.foreground': '#374151',
+        'editorLineNumber.activeForeground': '#60a5fa',
+        'editorGutter.background': '#090c10',
+      },
+    });
+  }, []);
+
   const handleEditorMount: OnMount = useCallback(
     (editorInstance, monaco) => {
       editorRef.current = editorInstance;
@@ -111,7 +167,7 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({ onCursorChange }) =>
         }
       });
 
-      // ── Selection tracking for AI Context Menu ──
+      // ── Selection tracking for AI Context Popover ──
       editorInstance.onDidChangeCursorSelection((e) => {
         const selection = e.selection;
         const model = editorInstance.getModel();
@@ -137,7 +193,6 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({ onCursorChange }) =>
         setSelectionState((prev) => ({ ...prev, visible: false }));
       });
 
-      // Focus the editor
       editorInstance.focus();
     },
     [saveTab, onCursorChange]
@@ -162,17 +217,14 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({ onCursorChange }) =>
     const actionLang = activeTab.language || 'typescript';
 
     try {
-      // 1. Ensure AI Panel is open
       setAIPanelOpen(true);
 
-      // 2. Determine target session
       let targetSessionId = activeSessionId;
       if (!targetSessionId) {
         targetSessionId = createSession(`${action}: ${activeTab.name}`);
         setActiveSession(targetSessionId);
       }
 
-      // 3. Append user action message to chat
       const userMessage: ChatMessage = {
         id: `msg-${Date.now()}`,
         role: 'user',
@@ -181,7 +233,6 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({ onCursorChange }) =>
       };
       addMessage(targetSessionId, userMessage);
 
-      // 4. POST to /ai/actions
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
@@ -209,7 +260,6 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({ onCursorChange }) =>
         throw new Error(`HTTP ${res.status}`);
       }
 
-      // 5. Append assistant response message to chat
       const assistantMessage: ChatMessage = {
         id: `msg-${Date.now() + 1}`,
         role: 'assistant',
@@ -219,9 +269,8 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({ onCursorChange }) =>
       addMessage(targetSessionId, assistantMessage);
     } catch (err) {
       console.warn('[MonacoEditor] /ai/actions fallback trigger:', err);
-      // Fallback response if backend service is offline
       const fallbackResult = `### AI ${action} Analysis (${provider.toUpperCase()})\n\nProcessed selected \`${actionLang}\` snippet from **${activeTab.name}**:\n\n\`\`\`${actionLang}\n// ${action} recommendation\n${actionCode}\n\`\`\`\n\n- **Status**: Code analyzed successfully.\n- **Action Executed**: ${action}`;
-      
+
       const targetSessionId = useAIStore.getState().activeSessionId || createSession();
       addMessage(targetSessionId, {
         id: `msg-${Date.now() + 1}`,
@@ -240,19 +289,22 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({ onCursorChange }) =>
     return null;
   }
 
+  const activeMonacoTheme =
+    theme === 'pitch-black' ? 'pitch-black' : theme === 'light' ? 'vs' : 'codemind-dark';
+
   return (
-    <div className="relative w-full h-full">
-      {/* ─── Floating AI Actions Context Toolbar ───────────────────────── */}
+    <div className="relative w-full h-full bg-[#0e121b]">
+      {/* ─── Floating AI Actions Context Popover ────────────────────────── */}
       {selectionState.visible && (
         <div
           style={{ top: `${selectionState.top}px`, left: `${selectionState.left}px` }}
           className="
-            absolute z-40 flex items-center gap-1 p-1 rounded-lg border shadow-xl
-            bg-surface-200/95 border-accent/40 backdrop-blur-md animate-fade-in text-xs font-sans
+            absolute z-40 flex items-center gap-1 p-1 rounded-xl border border-blue-500/40 shadow-2xl
+            bg-[#182132]/95 backdrop-blur-md animate-in fade-in duration-150 text-xs font-sans
           "
         >
-          <div className="flex items-center gap-1 px-1.5 py-0.5 border-r border-border/60 text-2xs font-semibold text-accent-light">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="flex items-center gap-1 px-2 py-0.5 border-r border-slate-700/80 text-[10px] font-bold uppercase tracking-wider text-blue-400">
+            <svg className="w-3.5 h-3.5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
             <span>AI Actions</span>
@@ -266,14 +318,14 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({ onCursorChange }) =>
                 onClick={() => handleAIActionClick(action)}
                 disabled={loadingAction !== null}
                 className="
-                  flex items-center gap-1 px-2 py-1 rounded text-2xs font-medium
-                  hover:bg-accent hover:text-white text-text-primary transition-all duration-150
+                  flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium
+                  hover:bg-blue-600 hover:text-white text-slate-200 transition-all duration-150
                   disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap
                 "
-                title={`Run ${action} on selection`}
+                title={`Run ${action} on selected code`}
               >
                 {isLoading ? (
-                  <svg className="w-3 h-3 animate-spin text-accent-light" fill="none" viewBox="0 0 24 24">
+                  <svg className="w-3 h-3 animate-spin text-blue-300" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
@@ -287,13 +339,14 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({ onCursorChange }) =>
 
       {/* ─── Monaco Editor Component ───────────────────────────────────── */}
       <Editor
-        key={activeTab.id}
+        key={`${activeTab.id}-${activeMonacoTheme}`}
         height="100%"
         language={activeTab.language}
         value={activeTab.content}
         onChange={handleChange}
+        beforeMount={handleBeforeMount}
         onMount={handleEditorMount}
-        theme="vs-dark"
+        theme={activeMonacoTheme}
         options={{
           fontSize,
           fontFamily,
@@ -326,10 +379,10 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({ onCursorChange }) =>
           overviewRulerBorder: false,
         }}
         loading={
-          <div className="flex-1 flex items-center justify-center bg-surface-0">
+          <div className="flex-1 flex items-center justify-center bg-[#0e121b]">
             <div className="flex flex-col items-center gap-3">
-              <div className="w-6 h-6 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
-              <span className="text-xs text-text-muted">Loading editor…</span>
+              <div className="w-6 h-6 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+              <span className="text-xs text-slate-400">Loading code editor…</span>
             </div>
           </div>
         }

@@ -38,23 +38,33 @@ export type AIProvider = 'anthropic' | 'openai' | 'ollama' | 'gemini' | 'local';
 
 // ─── Settings ─────────────────────────────────────────────────────────────────
 
-export type Theme = 'dark' | 'light';
+export type Theme = 'dark' | 'pitch-black' | 'light' | 'system';
 
 export interface AppSettings {
   theme: Theme;
   fontSize: number;
   fontFamily: string;
   wordWrap: 'on' | 'off' | 'wordWrapColumn';
+  autoSave: boolean;
+  tabSize: 2 | 4;
   aiProvider: AIProvider;
   defaultLanguage: string;
+  ollamaUrl: string;
 }
 
-// ─── Auth ─────────────────────────────────────────────────────────────────────
+// ─── Auth & API ───────────────────────────────────────────────────────────────
 
 export interface AuthUser {
   id: string;
   email: string;
   name: string;
+}
+
+export interface ApiErrorResponse {
+  message?: string | string[];
+  error?: string;
+  statusCode?: number;
+  fieldErrors?: Record<string, string>;
 }
 
 // ─── Context Menu ─────────────────────────────────────────────────────────────
@@ -70,3 +80,12 @@ export interface ContextMenuPosition {
   x: number;
   y: number;
 }
+
+declare global {
+  interface Window {
+    codemind?: any;
+  }
+}
+
+
+

@@ -31,9 +31,13 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
 
   // Check if this file is the active tab
   const normalizedNodePath = node.path.replace(/\\/g, '/');
-  const isActive = !isFolder && openTabs.some(
-    (tab) => (tab.path === node.path || tab.path.replace(/\\/g, '/') === normalizedNodePath) && tab.id === activeTabId
-  );
+  const isActive =
+    !isFolder &&
+    openTabs.some(
+      (tab) =>
+        (tab.path === node.path || tab.path.replace(/\\/g, '/') === normalizedNodePath) &&
+        tab.id === activeTabId
+    );
 
   const handleClick = useCallback(() => {
     if (isFolder) {
@@ -54,56 +58,68 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
 
   return (
     <div>
-      {/* Node Row */}
+      {/* Node Item Row */}
       <button
         onClick={handleClick}
         onContextMenu={handleContextMenu}
         className={`
-          w-full flex items-center gap-1.5 py-[3px] pr-3 text-[13px] rounded-md
-          transition-colors duration-100 cursor-pointer group
-          ${isActive
-            ? 'bg-accent/15 text-accent-light'
-            : 'text-text-secondary hover:bg-surface-400/50 hover:text-text-primary'
+          w-full flex items-center gap-1.5 py-[3.5px] pr-2.5 text-[12.5px] font-mono text-left
+          transition-colors duration-100 cursor-pointer group relative select-none
+          ${
+            isActive
+              ? 'bg-blue-600/20 text-blue-300 font-semibold border-l-2 border-blue-500'
+              : 'text-slate-400 hover:bg-[#151b28] hover:text-slate-100 border-l-2 border-transparent'
           }
         `}
-        style={{ paddingLeft: `${depth * 16 + 8}px` }}
+        style={{ paddingLeft: `${depth * 14 + 10}px` }}
       >
-        {/* Chevron (folders only) */}
+        {/* Chevron indicator (Folders only) */}
         {isFolder ? (
           <span
             className={`
-              inline-flex items-center justify-center w-4 h-4 text-[10px]
-              text-text-muted transition-transform duration-150
-              ${isExpanded ? 'rotate-90' : 'rotate-0'}
+              inline-flex items-center justify-center w-3.5 h-3.5 text-slate-500
+              transition-transform duration-150 shrink-0
+              ${isExpanded ? 'rotate-90 text-slate-300' : 'rotate-0'}
             `}
           >
-            ▶
+            <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+              <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </span>
         ) : (
-          <span className="w-4" />
+          <span className="w-3.5 shrink-0" />
         )}
 
-        {/* Icon */}
+        {/* File / Folder Icon */}
         {isFolder ? (
-          <span className="text-sm" style={{ color: iconConfig.color }}>
-            {isExpanded ? '📂' : '📁'}
-          </span>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="text-amber-400 shrink-0">
+            <path
+              d="M2 4V12C2 12.5523 2.44772 13 3 13H13C13.5523 13 14 12.5523 14 12V6C14 5.44772 13.5523 5 13 5H8L6.5 3H3C2.44772 3 2 3.44772 2 4Z"
+              fill="currentColor"
+              fillOpacity="0.2"
+              stroke="currentColor"
+              strokeWidth="1.2"
+              strokeLinejoin="round"
+            />
+          </svg>
         ) : (
           <span
-            className="text-2xs font-bold font-mono w-5 text-center shrink-0 rounded-sm"
+            className="text-[10px] font-bold font-mono w-4 text-center shrink-0"
             style={{ color: iconConfig.color }}
           >
             {iconConfig.icon}
           </span>
         )}
 
-        {/* Name */}
-        <span className="truncate font-mono text-[13px]">{node.name}</span>
+        {/* File / Folder Name */}
+        <span className="truncate flex-1 tracking-tight" title={node.name}>
+          {node.name}
+        </span>
       </button>
 
-      {/* Children (if folder is expanded) */}
+      {/* Children Nodes (When folder is expanded) */}
       {isFolder && isExpanded && node.children && (
-        <div className="animate-fade-in">
+        <div className="animate-in fade-in duration-100">
           {node.children.map((child) => (
             <FileTreeNode
               key={child.path}
