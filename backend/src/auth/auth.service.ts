@@ -164,6 +164,6 @@ export class AuthService {
         userId,
         expiresAt: { lte: new Date() },
       },
-    }).catch(err => console.error('Failed to cleanup expired tokens:', err));
+    }).catch((err: any) => console.error('Failed to cleanup expired tokens:', err));
   }
 }
