@@ -42,15 +42,17 @@ cd code-mind
 ```
 
 ### 2. Run Environment Setup
-Execute the automated setup script to generate local environment configuration files:
+Execute the automated setup command to generate local environment configuration files:
 ```bash
-# On macOS / Linux / Git Bash:
-chmod +x ./scripts/setup.sh
-./scripts/setup.sh
+# Cross-platform (macOS, Linux, Windows):
+npm run setup
 
-# Or manually copy environment files:
-cp backend/.env.example backend/.env
-cp desktop/react/.env.example desktop/react/.env
+# Or via platform scripts:
+# macOS / Linux / Git Bash:
+chmod +x ./scripts/setup.sh && ./scripts/setup.sh
+
+# Windows PowerShell:
+.\scripts\setup.ps1
 ```
 
 ### 3. Start Database and Redis Containers
