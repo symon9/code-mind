@@ -79,7 +79,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
   },
 
   createNewFile: () => {
-    const id = `untitled-${Date.now()}`;
+    const id = `untitled-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const newTab: EditorTab = {
       id,
       path: `Untitled-${get().openTabs.length + 1}.ts`,
