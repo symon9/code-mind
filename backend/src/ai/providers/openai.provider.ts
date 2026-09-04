@@ -23,7 +23,10 @@ export class OpenAIProvider implements IAIProvider {
     return response.choices[0]?.message?.content || '';
   }
 
-  async *stream(messages: ChatMessage[], options: AIOptions): AsyncIterable<string> {
+  async *stream(
+    messages: ChatMessage[],
+    options: AIOptions,
+  ): AsyncIterable<string> {
     const stream = await this.client.chat.completions.create({
       model: options.model || 'gpt-4o',
       messages: messages.map((m) => ({

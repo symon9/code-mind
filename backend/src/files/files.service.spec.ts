@@ -41,7 +41,12 @@ describe('FilesService', () => {
   describe('createFile', () => {
     it('should create file if project is owned by user', async () => {
       const mockProject = { id: 'project-1', userId: 'user-1' };
-      const mockFile = { id: 'file-1', name: 'App.tsx', path: '/src/App.tsx', projectId: 'project-1' };
+      const mockFile = {
+        id: 'file-1',
+        name: 'App.tsx',
+        path: '/src/App.tsx',
+        projectId: 'project-1',
+      };
       mockPrismaService.project.findUnique.mockResolvedValue(mockProject);
       mockPrismaService.fileItem.create.mockResolvedValue(mockFile);
 
@@ -78,7 +83,14 @@ describe('FilesService', () => {
   describe('listFiles', () => {
     it('should return files of project', async () => {
       const mockProject = { id: 'project-1', userId: 'user-1' };
-      const mockFiles = [{ id: 'file-1', name: 'App.tsx', path: '/src/App.tsx', projectId: 'project-1' }];
+      const mockFiles = [
+        {
+          id: 'file-1',
+          name: 'App.tsx',
+          path: '/src/App.tsx',
+          projectId: 'project-1',
+        },
+      ];
       mockPrismaService.project.findUnique.mockResolvedValue(mockProject);
       mockPrismaService.fileItem.findMany.mockResolvedValue(mockFiles);
 
@@ -115,7 +127,9 @@ describe('FilesService', () => {
       };
       mockPrismaService.fileItem.findUnique.mockResolvedValue(mockFile);
 
-      await expect(service.deleteFile('user-1', 'file-1')).rejects.toThrow(ForbiddenException);
+      await expect(service.deleteFile('user-1', 'file-1')).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 

@@ -46,10 +46,17 @@ describe('ChatService', () => {
 
   describe('createSession', () => {
     it('should create session without project ID', async () => {
-      const mockSession = { id: 'session-1', title: 'New Chat', userId: 'user-1', projectId: null };
+      const mockSession = {
+        id: 'session-1',
+        title: 'New Chat',
+        userId: 'user-1',
+        projectId: null,
+      };
       mockPrismaService.chatSession.create.mockResolvedValue(mockSession);
 
-      const result = await service.createSession('user-1', { title: 'New Chat' });
+      const result = await service.createSession('user-1', {
+        title: 'New Chat',
+      });
       expect(result).toEqual(mockSession);
       expect(mockPrismaService.chatSession.create).toHaveBeenCalledWith({
         data: {
@@ -62,11 +69,19 @@ describe('ChatService', () => {
 
     it('should create session with project ID if owner matches', async () => {
       const mockProject = { id: 'project-1', userId: 'user-1' };
-      const mockSession = { id: 'session-1', title: 'P1 Chat', userId: 'user-1', projectId: 'project-1' };
+      const mockSession = {
+        id: 'session-1',
+        title: 'P1 Chat',
+        userId: 'user-1',
+        projectId: 'project-1',
+      };
       mockPrismaService.project.findUnique.mockResolvedValue(mockProject);
       mockPrismaService.chatSession.create.mockResolvedValue(mockSession);
 
-      const result = await service.createSession('user-1', { title: 'P1 Chat', projectId: 'project-1' });
+      const result = await service.createSession('user-1', {
+        title: 'P1 Chat',
+        projectId: 'project-1',
+      });
       expect(result).toEqual(mockSession);
     });
 
@@ -75,7 +90,10 @@ describe('ChatService', () => {
       mockPrismaService.project.findUnique.mockResolvedValue(mockProject);
 
       await expect(
-        service.createSession('user-1', { title: 'P1 Chat', projectId: 'project-1' }),
+        service.createSession('user-1', {
+          title: 'P1 Chat',
+          projectId: 'project-1',
+        }),
       ).rejects.toThrow(ForbiddenException);
     });
   });

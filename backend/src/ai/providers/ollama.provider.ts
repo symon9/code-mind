@@ -27,14 +27,19 @@ export class OllamaProvider implements IAIProvider {
     });
 
     if (!response.ok) {
-      throw new Error(`Ollama chat error: ${response.statusText} (${response.status})`);
+      throw new Error(
+        `Ollama chat error: ${response.statusText} (${response.status})`,
+      );
     }
 
     const data = await response.json();
     return data.message?.content || '';
   }
 
-  async *stream(messages: ChatMessage[], options: AIOptions): AsyncIterable<string> {
+  async *stream(
+    messages: ChatMessage[],
+    options: AIOptions,
+  ): AsyncIterable<string> {
     const response = await fetch(`${this.baseUrl}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -53,7 +58,9 @@ export class OllamaProvider implements IAIProvider {
     });
 
     if (!response.ok) {
-      throw new Error(`Ollama stream error: ${response.statusText} (${response.status})`);
+      throw new Error(
+        `Ollama stream error: ${response.statusText} (${response.status})`,
+      );
     }
 
     const reader = response.body;

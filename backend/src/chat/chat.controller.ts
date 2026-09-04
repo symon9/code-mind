@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Delete, Param, Body, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Param,
+  Body,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateSessionDto } from './dto/create-session.dto';
@@ -28,7 +37,11 @@ export class ChatController {
   }
 
   @Post('sessions/:id/messages')
-  async addMessage(@Request() req: any, @Param('id') id: string, @Body() dto: CreateMessageDto) {
+  async addMessage(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() dto: CreateMessageDto,
+  ) {
     const userId = req.user.sub;
     return this.chatService.addMessage(userId, id, dto.content);
   }

@@ -31,12 +31,18 @@ export class AIService {
       this.providers.set('gemini', new GeminiProvider(geminiKey));
     }
 
-    const ollamaUrl = this.configService.get<string>('OLLAMA_BASE_URL') || 'http://localhost:11434';
-    const ollamaModel = this.configService.get<string>('OLLAMA_MODEL') || 'llama3';
+    const ollamaUrl =
+      this.configService.get<string>('OLLAMA_BASE_URL') ||
+      'http://localhost:11434';
+    const ollamaModel =
+      this.configService.get<string>('OLLAMA_MODEL') || 'llama3';
     this.providers.set('ollama', new OllamaProvider(ollamaUrl, ollamaModel));
   }
 
-  private async getProvidersToTry(userId: string, requestedProvider?: string): Promise<{ name: string; defaultModel: string }[]> {
+  private async getProvidersToTry(
+    userId: string,
+    requestedProvider?: string,
+  ): Promise<{ name: string; defaultModel: string }[]> {
     const allProvidersInfo = [
       { name: 'anthropic', defaultModel: 'claude-3-5-sonnet-20241022' },
       { name: 'openai', defaultModel: 'gpt-4o' },
@@ -47,7 +53,9 @@ export class AIService {
     if (requestedProvider) {
       const info = allProvidersInfo.find((p) => p.name === requestedProvider);
       if (!info || !this.providers.has(requestedProvider)) {
-        throw new InternalServerErrorException(`Requested AI provider '${requestedProvider}' is not configured or unavailable.`);
+        throw new InternalServerErrorException(
+          `Requested AI provider '${requestedProvider}' is not configured or unavailable.`,
+        );
       }
       return [info];
     }
@@ -68,7 +76,9 @@ export class AIService {
     const added = new Set<string>();
 
     if (preferredProvider && this.providers.has(preferredProvider)) {
-      const prefInfo = allProvidersInfo.find((p) => p.name === preferredProvider);
+      const prefInfo = allProvidersInfo.find(
+        (p) => p.name === preferredProvider,
+      );
       if (prefInfo) {
         chain.push(prefInfo);
         added.add(preferredProvider);
@@ -112,18 +122,31 @@ export class AIService {
     messages: ChatMessage[],
     options: AIOptions,
     requestedProvider?: string,
-  ): Promise<{ content: string; provider: string; model: string; tokensUsed: number }> {
-    const providersToTry = await this.getProvidersToTry(userId, requestedProvider);
+  ): Promise<{
+    content: string;
+    provider: string;
+    model: string;
+    tokensUsed: number;
+  }> {
+    const providersToTry = await this.getProvidersToTry(
+      userId,
+      requestedProvider,
+    );
     if (providersToTry.length === 0) {
-      throw new InternalServerErrorException('All AI providers are currently unavailable');
+      throw new InternalServerErrorException(
+        'All AI providers are currently unavailable',
+      );
     }
 
     let lastError: any = null;
     for (const providerInfo of providersToTry) {
       try {
         const provider = this.providers.get(providerInfo.name)!;
-        const model = this.mapModel(providerInfo.name, options.model || providerInfo.defaultModel);
-        
+        const model = this.mapModel(
+          providerInfo.name,
+          options.model || providerInfo.defaultModel,
+        );
+
         const content = await provider.chat(messages, { ...options, model });
 
         const promptText = messages.map((m) => m.content).join('\n');
@@ -152,7 +175,10 @@ export class AIService {
         if (requestedProvider) {
           throw err;
         }
-        console.error(`AI provider '${providerInfo.name}' failed. Falling back. Error:`, err);
+        console.error(
+          `AI provider '${providerInfo.name}' failed. Falling back. Error:`,
+          err,
+        );
       }
     }
 
@@ -166,10 +192,23 @@ export class AIService {
     messages: ChatMessage[],
     options: AIOptions,
     requestedProvider?: string,
-  ): AsyncIterable<{ chunk: string; metadata?: { provider: string; model: string; promptTokens: number; completionTokens: number } }> {
-    const providersToTry = await this.getProvidersToTry(userId, requestedProvider);
+  ): AsyncIterable<{
+    chunk: string;
+    metadata?: {
+      provider: string;
+      model: string;
+      promptTokens: number;
+      completionTokens: number;
+    };
+  }> {
+    const providersToTry = await this.getProvidersToTry(
+      userId,
+      requestedProvider,
+    );
     if (providersToTry.length === 0) {
-      throw new InternalServerErrorException('All AI providers are currently unavailable');
+      throw new InternalServerErrorException(
+        'All AI providers are currently unavailable',
+      );
     }
 
     let lastError: any = null;
@@ -181,7 +220,10 @@ export class AIService {
     for (const providerInfo of providersToTry) {
       try {
         const provider = this.providers.get(providerInfo.name)!;
-        const model = this.mapModel(providerInfo.name, options.model || providerInfo.defaultModel);
+        const model = this.mapModel(
+          providerInfo.name,
+          options.model || providerInfo.defaultModel,
+        );
 
         const stream = provider.stream(messages, { ...options, model });
 
@@ -209,7 +251,10 @@ export class AIService {
         if (requestedProvider) {
           throw err;
         }
-        console.error(`AI stream provider '${providerInfo.name}' failed. Falling back. Error:`, err);
+        console.error(
+          `AI stream provider '${providerInfo.name}' failed. Falling back. Error:`,
+          err,
+        );
       }
     }
 
@@ -248,9 +293,15 @@ export class AIService {
     };
   }
 
-  private buildSystemPrompt(action: string, language: string, context?: string): string {
+  private buildSystemPrompt(
+    action: string,
+    language: string,
+    context?: string,
+  ): string {
     const langContext = language ? `The code is written in ${language}.` : '';
-    const additionalContext = context ? `Additional context or instructions: ${context}` : '';
+    const additionalContext = context
+      ? `Additional context or instructions: ${context}`
+      : '';
 
     switch (action) {
       case 'explain':

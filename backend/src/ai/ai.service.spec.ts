@@ -142,41 +142,72 @@ describe('AIService', () => {
 
   describe('chat', () => {
     it('should route directly to explicit provider (openai) and skip fallback', async () => {
-      const response = await service.chat('user-1', [{ role: 'user', content: 'hi' }], {}, 'openai');
+      const response = await service.chat(
+        'user-1',
+        [{ role: 'user', content: 'hi' }],
+        {},
+        'openai',
+      );
       expect(response.provider).toBe('openai');
       expect(response.content).toBe('OpenAI response');
       expect(mockPrismaService.aIRequest.create).toHaveBeenCalled();
     });
 
     it('should route directly to explicit provider (anthropic) and skip fallback', async () => {
-      const response = await service.chat('user-1', [{ role: 'user', content: 'hi' }], {}, 'anthropic');
+      const response = await service.chat(
+        'user-1',
+        [{ role: 'user', content: 'hi' }],
+        {},
+        'anthropic',
+      );
       expect(response.provider).toBe('anthropic');
       expect(response.content).toBe('Anthropic response');
     });
 
     it('should route directly to explicit provider (gemini) and skip fallback', async () => {
-      const response = await service.chat('user-1', [{ role: 'user', content: 'hi' }], {}, 'gemini');
+      const response = await service.chat(
+        'user-1',
+        [{ role: 'user', content: 'hi' }],
+        {},
+        'gemini',
+      );
       expect(response.provider).toBe('gemini');
       expect(response.content).toBe('Gemini response');
     });
 
     it('should use preferred provider from database if no provider specified', async () => {
-      mockPrismaService.preference.findUnique.mockResolvedValue({ aiProvider: 'openai' });
+      mockPrismaService.preference.findUnique.mockResolvedValue({
+        aiProvider: 'openai',
+      });
 
-      const response = await service.chat('user-1', [{ role: 'user', content: 'hi' }], {});
+      const response = await service.chat(
+        'user-1',
+        [{ role: 'user', content: 'hi' }],
+        {},
+      );
       expect(response.provider).toBe('openai');
       expect(response.content).toBe('OpenAI response');
-      expect(mockPrismaService.preference.findUnique).toHaveBeenCalledWith({ where: { userId: 'user-1' } });
+      expect(mockPrismaService.preference.findUnique).toHaveBeenCalledWith({
+        where: { userId: 'user-1' },
+      });
     });
 
     it('should fallback to next in priority chain (openai) if preferred (anthropic) fails', async () => {
-      mockPrismaService.preference.findUnique.mockResolvedValue({ aiProvider: 'anthropic' });
+      mockPrismaService.preference.findUnique.mockResolvedValue({
+        aiProvider: 'anthropic',
+      });
 
       // Mock Anthropic client to fail in this test
       const anthropicProvider = (service as any).providers.get('anthropic');
-      jest.spyOn(anthropicProvider, 'chat').mockRejectedValueOnce(new Error('Anthropic Rate Limit'));
+      jest
+        .spyOn(anthropicProvider, 'chat')
+        .mockRejectedValueOnce(new Error('Anthropic Rate Limit'));
 
-      const response = await service.chat('user-1', [{ role: 'user', content: 'hi' }], {});
+      const response = await service.chat(
+        'user-1',
+        [{ role: 'user', content: 'hi' }],
+        {},
+      );
       expect(response.provider).toBe('openai');
       expect(response.content).toBe('OpenAI response');
     });
@@ -187,20 +218,34 @@ describe('AIService', () => {
       const geminiProvider = (service as any).providers.get('gemini');
       const ollamaProvider = (service as any).providers.get('ollama');
 
-      jest.spyOn(anthropicProvider, 'chat').mockRejectedValue(new Error('Anth error'));
-      jest.spyOn(openaiProvider, 'chat').mockRejectedValue(new Error('OpenAI error'));
-      jest.spyOn(geminiProvider, 'chat').mockRejectedValue(new Error('Gemini error'));
-      jest.spyOn(ollamaProvider, 'chat').mockRejectedValue(new Error('Ollama error'));
+      jest
+        .spyOn(anthropicProvider, 'chat')
+        .mockRejectedValue(new Error('Anth error'));
+      jest
+        .spyOn(openaiProvider, 'chat')
+        .mockRejectedValue(new Error('OpenAI error'));
+      jest
+        .spyOn(geminiProvider, 'chat')
+        .mockRejectedValue(new Error('Gemini error'));
+      jest
+        .spyOn(ollamaProvider, 'chat')
+        .mockRejectedValue(new Error('Ollama error'));
 
       await expect(
-        service.chat('user-1', [{ role: 'user', content: 'hi' }], {})
+        service.chat('user-1', [{ role: 'user', content: 'hi' }], {}),
       ).rejects.toThrow('All AI providers are currently unavailable');
     });
   });
 
   describe('executeAction', () => {
     it('should execute review action and format prompt correctly', async () => {
-      const response = await service.executeAction('user-1', 'review', 'const a = 1;', 'javascript', 'make it simple');
+      const response = await service.executeAction(
+        'user-1',
+        'review',
+        'const a = 1;',
+        'javascript',
+        'make it simple',
+      );
       expect(response.action).toBe('review');
       expect(response.provider).toBe('anthropic'); // defaults to anthropic
       expect(response.result).toBe('Anthropic response');

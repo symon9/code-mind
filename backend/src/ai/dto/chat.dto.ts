@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsArray, IsOptional, IsString, IsObject } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsArray,
+  IsOptional,
+  IsString,
+  IsObject,
+} from 'class-validator';
 import { ChatMessage, AIOptions } from '../types';
 
 export class ChatDto {

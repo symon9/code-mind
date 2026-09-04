@@ -1,4 +1,8 @@
-import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -49,7 +53,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const isPasswordValid = await bcrypt.compare(dto.password, user.passwordHash);
+    const isPasswordValid = await bcrypt.compare(
+      dto.password,
+      user.passwordHash,
+    );
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -159,11 +166,15 @@ export class AuthService {
     });
 
     // Cleanup expired tokens for this user in background
-    this.prisma.refreshToken.deleteMany({
-      where: {
-        userId,
-        expiresAt: { lte: new Date() },
-      },
-    }).catch((err: any) => console.error('Failed to cleanup expired tokens:', err));
+    this.prisma.refreshToken
+      .deleteMany({
+        where: {
+          userId,
+          expiresAt: { lte: new Date() },
+        },
+      })
+      .catch((err: any) =>
+        console.error('Failed to cleanup expired tokens:', err),
+      );
   }
 }

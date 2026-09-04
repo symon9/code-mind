@@ -38,10 +38,18 @@ describe('ProjectsService', () => {
 
   describe('createProject', () => {
     it('should create a project', async () => {
-      const mockProject = { id: 'project-1', name: 'Test Project', path: '/test', userId: 'user-1' };
+      const mockProject = {
+        id: 'project-1',
+        name: 'Test Project',
+        path: '/test',
+        userId: 'user-1',
+      };
       mockPrismaService.project.create.mockResolvedValue(mockProject);
 
-      const result = await service.createProject('user-1', { name: 'Test Project', path: '/test' });
+      const result = await service.createProject('user-1', {
+        name: 'Test Project',
+        path: '/test',
+      });
       expect(result).toEqual(mockProject);
       expect(mockPrismaService.project.create).toHaveBeenCalledWith({
         data: {
@@ -71,7 +79,12 @@ describe('ProjectsService', () => {
 
   describe('getProject', () => {
     it('should return project if owned by user', async () => {
-      const mockProject = { id: 'project-1', name: 'P1', path: '/p1', userId: 'user-1' };
+      const mockProject = {
+        id: 'project-1',
+        name: 'P1',
+        path: '/p1',
+        userId: 'user-1',
+      };
       mockPrismaService.project.findUnique.mockResolvedValue(mockProject);
 
       const result = await service.getProject('user-1', 'project-1');
@@ -81,25 +94,41 @@ describe('ProjectsService', () => {
     it('should throw NotFoundException if project not found', async () => {
       mockPrismaService.project.findUnique.mockResolvedValue(null);
 
-      await expect(service.getProject('user-1', 'project-1')).rejects.toThrow(NotFoundException);
+      await expect(service.getProject('user-1', 'project-1')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw ForbiddenException if project owned by another user', async () => {
-      const mockProject = { id: 'project-1', name: 'P1', path: '/p1', userId: 'user-2' };
+      const mockProject = {
+        id: 'project-1',
+        name: 'P1',
+        path: '/p1',
+        userId: 'user-2',
+      };
       mockPrismaService.project.findUnique.mockResolvedValue(mockProject);
 
-      await expect(service.getProject('user-1', 'project-1')).rejects.toThrow(ForbiddenException);
+      await expect(service.getProject('user-1', 'project-1')).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 
   describe('updateProject', () => {
     it('should update project if owned by user', async () => {
-      const mockProject = { id: 'project-1', name: 'P1', path: '/p1', userId: 'user-1' };
+      const mockProject = {
+        id: 'project-1',
+        name: 'P1',
+        path: '/p1',
+        userId: 'user-1',
+      };
       const updatedProject = { ...mockProject, name: 'P1-updated' };
       mockPrismaService.project.findUnique.mockResolvedValue(mockProject);
       mockPrismaService.project.update.mockResolvedValue(updatedProject);
 
-      const result = await service.updateProject('user-1', 'project-1', { name: 'P1-updated' });
+      const result = await service.updateProject('user-1', 'project-1', {
+        name: 'P1-updated',
+      });
       expect(result).toEqual(updatedProject);
       expect(mockPrismaService.project.update).toHaveBeenCalledWith({
         where: { id: 'project-1' },
@@ -110,7 +139,12 @@ describe('ProjectsService', () => {
 
   describe('deleteProject', () => {
     it('should delete project if owned by user', async () => {
-      const mockProject = { id: 'project-1', name: 'P1', path: '/p1', userId: 'user-1' };
+      const mockProject = {
+        id: 'project-1',
+        name: 'P1',
+        path: '/p1',
+        userId: 'user-1',
+      };
       mockPrismaService.project.findUnique.mockResolvedValue(mockProject);
       mockPrismaService.project.delete.mockResolvedValue(mockProject);
 

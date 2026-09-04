@@ -106,7 +106,9 @@ describe('AuthService', () => {
         name: 'Existing User',
       };
 
-      mockPrismaService.user.findUnique.mockResolvedValue({ id: 'existing-id' });
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        id: 'existing-id',
+      });
 
       await expect(service.register(dto)).rejects.toThrow(ConflictException);
     });

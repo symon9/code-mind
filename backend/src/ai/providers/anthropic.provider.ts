@@ -37,7 +37,10 @@ export class AnthropicProvider implements IAIProvider {
     return '';
   }
 
-  async *stream(messages: ChatMessage[], options: AIOptions): AsyncIterable<string> {
+  async *stream(
+    messages: ChatMessage[],
+    options: AIOptions,
+  ): AsyncIterable<string> {
     const { system, messages: formattedMessages } = this.mapMessages(messages);
     const stream = await this.client.messages.create({
       model: options.model || 'claude-3-5-sonnet-20241022',
@@ -49,7 +52,11 @@ export class AnthropicProvider implements IAIProvider {
     });
 
     for await (const chunk of stream) {
-      if (chunk.type === 'content_block_delta' && chunk.delta && 'text' in chunk.delta) {
+      if (
+        chunk.type === 'content_block_delta' &&
+        chunk.delta &&
+        'text' in chunk.delta
+      ) {
         yield chunk.delta.text;
       }
     }

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
@@ -40,7 +44,11 @@ export class ProjectsService {
     return project;
   }
 
-  async updateProject(userId: string, projectId: string, dto: UpdateProjectDto) {
+  async updateProject(
+    userId: string,
+    projectId: string,
+    dto: UpdateProjectDto,
+  ) {
     // Validate ownership
     await this.getProject(userId, projectId);
 

@@ -1,4 +1,14 @@
-import { Controller, Post, Body, Sse, Request, UseGuards, HttpCode, HttpStatus, MessageEvent } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Sse,
+  Request,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+  MessageEvent,
+} from '@nestjs/common';
 import { AIService } from './ai.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ChatDto } from './dto/chat.dto';
@@ -14,18 +24,25 @@ export class AIController {
   @HttpCode(HttpStatus.OK)
   async chat(@Request() req: any, @Body() dto: ChatDto) {
     const userId = req.user.sub;
-    return this.aiService.chat(userId, dto.messages, dto.options || {}, dto.provider);
+    return this.aiService.chat(
+      userId,
+      dto.messages,
+      dto.options || {},
+      dto.provider,
+    );
   }
 
   @Post('stream')
   @HttpCode(HttpStatus.OK)
   @Sse()
-  stream(
-    @Request() req: any,
-    @Body() dto: ChatDto,
-  ): Observable<MessageEvent> {
+  stream(@Request() req: any, @Body() dto: ChatDto): Observable<MessageEvent> {
     const userId = req.user.sub;
-    const asyncIterable = this.aiService.stream(userId, dto.messages, dto.options || {}, dto.provider);
+    const asyncIterable = this.aiService.stream(
+      userId,
+      dto.messages,
+      dto.options || {},
+      dto.provider,
+    );
 
     return new Observable<MessageEvent>((subscriber) => {
       let active = true;
@@ -33,7 +50,7 @@ export class AIController {
         try {
           for await (const val of asyncIterable) {
             if (!active) break;
-            
+
             if (val.metadata) {
               subscriber.next({
                 data: { metadata: val.metadata },

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { Role } from '@prisma/client';
@@ -31,7 +35,9 @@ export class ChatService {
     }
 
     if (session.userId !== userId) {
-      throw new ForbiddenException('You do not have access to this chat session');
+      throw new ForbiddenException(
+        'You do not have access to this chat session',
+      );
     }
 
     return session;

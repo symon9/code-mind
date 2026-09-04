@@ -19,7 +19,14 @@ describe('AIController', () => {
     stream: jest.fn().mockImplementation(async function* () {
       yield { chunk: 'Hello' };
       yield { chunk: ' world' };
-      yield { metadata: { provider: 'openai', model: 'gpt-4o', promptTokens: 5, completionTokens: 5 } };
+      yield {
+        metadata: {
+          provider: 'openai',
+          model: 'gpt-4o',
+          promptTokens: 5,
+          completionTokens: 5,
+        },
+      };
     }),
     executeAction: jest.fn().mockResolvedValue({
       result: 'Action result',
@@ -63,13 +70,22 @@ describe('AIController', () => {
         model: 'gpt-4o',
         tokensUsed: 10,
       });
-      expect(mockAIService.chat).toHaveBeenCalledWith('user-123', body.messages, {}, undefined);
+      expect(mockAIService.chat).toHaveBeenCalledWith(
+        'user-123',
+        body.messages,
+        {},
+        undefined,
+      );
     });
   });
 
   describe('actions', () => {
     it('should call service.executeAction', async () => {
-      const body = { action: 'explain', code: 'const x = 1;', language: 'javascript' };
+      const body = {
+        action: 'explain',
+        code: 'const x = 1;',
+        language: 'javascript',
+      };
       const req = { user: { sub: 'user-123' } };
       const result = await controller.actions(req, body);
       expect(result).toEqual({
@@ -101,7 +117,17 @@ describe('AIController', () => {
           expect(events).toEqual([
             { data: { chunk: 'Hello' } },
             { data: { chunk: ' world' } },
-            { data: { metadata: { provider: 'openai', model: 'gpt-4o', promptTokens: 5, completionTokens: 5 } }, type: 'metadata' },
+            {
+              data: {
+                metadata: {
+                  provider: 'openai',
+                  model: 'gpt-4o',
+                  promptTokens: 5,
+                  completionTokens: 5,
+                },
+              },
+              type: 'metadata',
+            },
           ]);
           done();
         },

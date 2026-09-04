@@ -40,7 +40,10 @@ export class GeminiProvider implements IAIProvider {
     return result.response?.text() || '';
   }
 
-  async *stream(messages: ChatMessage[], options: AIOptions): AsyncIterable<string> {
+  async *stream(
+    messages: ChatMessage[],
+    options: AIOptions,
+  ): AsyncIterable<string> {
     const { systemInstruction, contents } = this.mapMessages(messages);
     const modelName = options.model || 'gemini-1.5-flash';
 
