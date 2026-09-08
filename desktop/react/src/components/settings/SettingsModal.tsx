@@ -3,7 +3,7 @@ import { useLayoutStore } from '../../stores/useLayoutStore';
 import { useSettingsStore } from '../../stores/useSettingsStore';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { useToastStore } from '../../stores/useToastStore';
-import { patchUserPreferencesApi } from '../../utils/api';
+import { patchUserPreferencesApi, testAiConnectionApi } from '../../utils/api';
 import type { AIProvider, Theme } from '../../types';
 import logoImg from '../../assets/logo';
 
@@ -29,9 +29,13 @@ export const SettingsModal: React.FC = () => {
   const [aiProvider, setAiProvider] = useState<AIProvider>(settings.aiProvider);
   const [anthropicApiKey, setAnthropicApiKey] = useState<string>('');
   const [openaiApiKey, setOpenaiApiKey] = useState<string>('');
+  const [geminiApiKey, setGeminiApiKey] = useState<string>('');
   const [ollamaUrl, setOllamaUrl] = useState<string>(settings.ollamaUrl || 'http://localhost:11434');
 
   const [isSaving, setIsSaving] = useState(false);
+  const [testResults, setTestResults] = useState<
+    Record<string, { loading: boolean; success?: boolean; message?: string }>
+  >({});
 
   // Sync state when modal opens
   useEffect(() => {
@@ -46,10 +50,62 @@ export const SettingsModal: React.FC = () => {
       setOllamaUrl(settings.ollamaUrl || 'http://localhost:11434');
       setAnthropicApiKey('');
       setOpenaiApiKey('');
+      setGeminiApiKey('');
+      setTestResults({});
     }
   }, [isSettingsOpen, settings]);
 
   if (!isSettingsOpen) return null;
+
+  const handleTestConnection = async (provider: string) => {
+    if (!token) {
+      addToast('Please log in first to test AI provider connections', 'info');
+      return;
+    }
+
+    setTestResults((prev) => ({
+      ...prev,
+      [provider]: { loading: true },
+    }));
+
+    try {
+      let key = '';
+      if (provider === 'anthropic') key = anthropicApiKey;
+      if (provider === 'openai') key = openaiApiKey;
+      if (provider === 'gemini') key = geminiApiKey;
+
+      const res = await testAiConnectionApi(token, {
+        provider,
+        apiKey: key || undefined,
+        ollamaUrl: provider === 'ollama' ? ollamaUrl : undefined,
+      });
+
+      setTestResults((prev) => ({
+        ...prev,
+        [provider]: {
+          loading: false,
+          success: res.success,
+          message: res.message,
+        },
+      }));
+
+      if (res.success) {
+        addToast(`${provider.toUpperCase()} connection verified (${res.latencyMs}ms)`, 'success');
+      } else {
+        addToast(res.message || `Failed to connect to ${provider}`, 'error');
+      }
+    } catch (err: any) {
+      setTestResults((prev) => ({
+        ...prev,
+        [provider]: {
+          loading: false,
+          success: false,
+          message: err?.message || 'Connection test failed',
+        },
+      }));
+      addToast(err?.message || `Failed to connect to ${provider}`, 'error');
+    }
+  };
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -80,6 +136,7 @@ export const SettingsModal: React.FC = () => {
           ollamaUrl,
           ...(anthropicApiKey ? { anthropicApiKey } : {}),
           ...(openaiApiKey ? { openaiApiKey } : {}),
+          ...(geminiApiKey ? { geminiApiKey } : {}),
         });
       }
 
@@ -99,7 +156,7 @@ export const SettingsModal: React.FC = () => {
       <div className="absolute inset-0" onClick={closeSettings} />
 
       {/* Modal Dialog */}
-      <div className="relative w-full max-w-3xl h-[560px] bg-surface-100 border border-border/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden z-10 animate-scale-up">
+      <div className="relative w-full max-w-3xl h-[600px] bg-surface-100 border border-border/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden z-10 animate-scale-up">
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-surface-200/50">
           <div className="flex items-center gap-2.5">
@@ -154,18 +211,18 @@ export const SettingsModal: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <label className="text-sm font-medium text-text-primary block">Font Family</label>
-                    <span className="text-xs text-text-muted">Controls the font family for code</span>
+                    <span className="text-xs text-text-muted">Monospace font used in the editor</span>
                   </div>
                   <select
                     value={fontFamily}
                     onChange={(e) => setFontFamily(e.target.value)}
-                    className="px-3 py-1.5 bg-surface-200 border border-border rounded-md text-sm text-text-primary focus:outline-none focus:border-accent"
+                    className="w-48 px-3 py-1.5 bg-surface-200 border border-border rounded-md text-sm text-text-primary focus:outline-none focus:border-accent"
                   >
-                    <option value="JetBrains Mono">JetBrains Mono</option>
-                    <option value="Fira Code">Fira Code</option>
-                    <option value="Cascadia Code">Cascadia Code</option>
-                    <option value="Menlo">Menlo</option>
-                    <option value="Consolas">Consolas</option>
+                    <option value="'Fira Code', monospace">Fira Code</option>
+                    <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
+                    <option value="'Cascadia Code', monospace">Cascadia Code</option>
+                    <option value="'Source Code Pro', monospace">Source Code Pro</option>
+                    <option value="monospace">Standard Monospace</option>
                   </select>
                 </div>
 
@@ -173,7 +230,7 @@ export const SettingsModal: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <label className="text-sm font-medium text-text-primary block">Word Wrap</label>
-                    <span className="text-xs text-text-muted">Wrap long lines to fit the editor view</span>
+                    <span className="text-xs text-text-muted">Wrap long lines to fit the editor viewport</span>
                   </div>
                   <ToggleSwitch
                     checked={wordWrap === 'on'}
@@ -185,11 +242,11 @@ export const SettingsModal: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <label className="text-sm font-medium text-text-primary block">Auto Save</label>
-                    <span className="text-xs text-text-muted">Automatically save modified files</span>
+                    <span className="text-xs text-text-muted">Automatically save active file changes</span>
                   </div>
                   <ToggleSwitch
                     checked={autoSave}
-                    onChange={(val) => setAutoSave(val)}
+                    onChange={setAutoSave}
                   />
                 </div>
 
@@ -271,7 +328,13 @@ export const SettingsModal: React.FC = () => {
                 {/* Default Provider */}
                 <div>
                   <label className="text-sm font-medium text-text-primary block mb-2">Default AI Provider</label>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-4 gap-2.5">
+                    <ProviderOption
+                      id="gemini"
+                      name="Gemini"
+                      active={aiProvider === 'gemini'}
+                      onClick={() => setAiProvider('gemini')}
+                    />
                     <ProviderOption
                       id="anthropic"
                       name="Anthropic"
@@ -293,42 +356,125 @@ export const SettingsModal: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Gemini Key */}
+                <div className="space-y-1.5 p-3 rounded-xl bg-surface-200/40 border border-border">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
+                      <span>✨ Google Gemini</span>
+                      <span className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.2 rounded font-normal">Fast & Native</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => handleTestConnection('gemini')}
+                      disabled={testResults['gemini']?.loading}
+                      className="text-[11px] px-2.5 py-1 rounded bg-surface-300 hover:bg-accent hover:text-white text-text-primary border border-border transition-all flex items-center gap-1 disabled:opacity-50"
+                    >
+                      {testResults['gemini']?.loading ? 'Testing...' : 'Test Connection'}
+                    </button>
+                  </div>
+                  <input
+                    type="password"
+                    value={geminiApiKey}
+                    onChange={(e) => setGeminiApiKey(e.target.value)}
+                    placeholder="AIzaSy••••••••••••••••"
+                    className="w-full px-3.5 py-2 bg-surface-100 border border-border rounded-lg text-sm text-text-primary placeholder:text-text-muted/50 focus:outline-none focus:border-accent font-mono"
+                  />
+                  {testResults['gemini']?.message && (
+                    <div className={`text-[11px] px-2 py-1 rounded flex items-center gap-1 ${testResults['gemini'].success ? 'text-emerald-400 bg-emerald-500/10' : 'text-rose-400 bg-rose-500/10'}`}>
+                      <span>{testResults['gemini'].success ? '✓' : '✗'}</span>
+                      <span>{testResults['gemini'].message}</span>
+                    </div>
+                  )}
+                </div>
+
                 {/* Anthropic Key */}
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-text-muted uppercase">Anthropic API Key</label>
+                <div className="space-y-1.5 p-3 rounded-xl bg-surface-200/40 border border-border">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
+                      <span>🧠 Anthropic Claude</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => handleTestConnection('anthropic')}
+                      disabled={testResults['anthropic']?.loading}
+                      className="text-[11px] px-2.5 py-1 rounded bg-surface-300 hover:bg-accent hover:text-white text-text-primary border border-border transition-all flex items-center gap-1 disabled:opacity-50"
+                    >
+                      {testResults['anthropic']?.loading ? 'Testing...' : 'Test Connection'}
+                    </button>
+                  </div>
                   <input
                     type="password"
                     value={anthropicApiKey}
                     onChange={(e) => setAnthropicApiKey(e.target.value)}
                     placeholder="sk-ant-••••••••••••••••"
-                    className="w-full px-3.5 py-2 bg-surface-200 border border-border rounded-lg text-sm text-text-primary placeholder:text-text-muted/50 focus:outline-none focus:border-accent"
+                    className="w-full px-3.5 py-2 bg-surface-100 border border-border rounded-lg text-sm text-text-primary placeholder:text-text-muted/50 focus:outline-none focus:border-accent font-mono"
                   />
-                  <span className="text-[11px] text-text-muted block">Stored directly in backend preferences — never stored in browser state.</span>
+                  {testResults['anthropic']?.message && (
+                    <div className={`text-[11px] px-2 py-1 rounded flex items-center gap-1 ${testResults['anthropic'].success ? 'text-emerald-400 bg-emerald-500/10' : 'text-rose-400 bg-rose-500/10'}`}>
+                      <span>{testResults['anthropic'].success ? '✓' : '✗'}</span>
+                      <span>{testResults['anthropic'].message}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* OpenAI Key */}
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-text-muted uppercase">OpenAI API Key</label>
+                <div className="space-y-1.5 p-3 rounded-xl bg-surface-200/40 border border-border">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
+                      <span>⚡ OpenAI GPT</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => handleTestConnection('openai')}
+                      disabled={testResults['openai']?.loading}
+                      className="text-[11px] px-2.5 py-1 rounded bg-surface-300 hover:bg-accent hover:text-white text-text-primary border border-border transition-all flex items-center gap-1 disabled:opacity-50"
+                    >
+                      {testResults['openai']?.loading ? 'Testing...' : 'Test Connection'}
+                    </button>
+                  </div>
                   <input
                     type="password"
                     value={openaiApiKey}
                     onChange={(e) => setOpenaiApiKey(e.target.value)}
                     placeholder="sk-proj-••••••••••••••••"
-                    className="w-full px-3.5 py-2 bg-surface-200 border border-border rounded-lg text-sm text-text-primary placeholder:text-text-muted/50 focus:outline-none focus:border-accent"
+                    className="w-full px-3.5 py-2 bg-surface-100 border border-border rounded-lg text-sm text-text-primary placeholder:text-text-muted/50 focus:outline-none focus:border-accent font-mono"
                   />
-                  <span className="text-[11px] text-text-muted block">Stored directly in backend preferences — never stored in browser state.</span>
+                  {testResults['openai']?.message && (
+                    <div className={`text-[11px] px-2 py-1 rounded flex items-center gap-1 ${testResults['openai'].success ? 'text-emerald-400 bg-emerald-500/10' : 'text-rose-400 bg-rose-500/10'}`}>
+                      <span>{testResults['openai'].success ? '✓' : '✗'}</span>
+                      <span>{testResults['openai'].message}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Ollama URL */}
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-text-muted uppercase">Ollama Server URL</label>
+                <div className="space-y-1.5 p-3 rounded-xl bg-surface-200/40 border border-border">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
+                      <span>🦙 Ollama (Local)</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => handleTestConnection('ollama')}
+                      disabled={testResults['ollama']?.loading}
+                      className="text-[11px] px-2.5 py-1 rounded bg-surface-300 hover:bg-accent hover:text-white text-text-primary border border-border transition-all flex items-center gap-1 disabled:opacity-50"
+                    >
+                      {testResults['ollama']?.loading ? 'Testing...' : 'Test Connection'}
+                    </button>
+                  </div>
                   <input
                     type="text"
                     value={ollamaUrl}
                     onChange={(e) => setOllamaUrl(e.target.value)}
                     placeholder="http://localhost:11434"
-                    className="w-full px-3.5 py-2 bg-surface-200 border border-border rounded-lg text-sm text-text-primary focus:outline-none focus:border-accent font-mono"
+                    className="w-full px-3.5 py-2 bg-surface-100 border border-border rounded-lg text-sm text-text-primary focus:outline-none focus:border-accent font-mono"
                   />
+                  {testResults['ollama']?.message && (
+                    <div className={`text-[11px] px-2 py-1 rounded flex items-center gap-1 ${testResults['ollama'].success ? 'text-emerald-400 bg-emerald-500/10' : 'text-rose-400 bg-rose-500/10'}`}>
+                      <span>{testResults['ollama'].success ? '✓' : '✗'}</span>
+                      <span>{testResults['ollama'].message}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
