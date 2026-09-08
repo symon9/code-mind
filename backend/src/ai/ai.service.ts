@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  BadRequestException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { ChatMessage, AIOptions, IAIProvider } from './types';
@@ -356,5 +360,83 @@ export class AIService {
       action,
       provider: chatResponse.provider,
     };
+  }
+
+  async testProviderConnection(
+    providerName: string,
+    apiKey?: string,
+    ollamaUrl?: string,
+    model?: string,
+  ): Promise<{
+    success: boolean;
+    provider: string;
+    model: string;
+    latencyMs: number;
+    message: string;
+  }> {
+    const startTime = Date.now();
+    const normalized = providerName.toLowerCase();
+
+    let tempProvider: IAIProvider;
+    let testModel = model;
+
+    if (normalized === 'anthropic') {
+      const key = apiKey || this.configService.get<string>('ANTHROPIC_API_KEY');
+      if (!key) {
+        throw new BadRequestException('Anthropic API key is required');
+      }
+      tempProvider = new AnthropicProvider(key);
+      testModel = testModel || 'claude-3-5-sonnet-20241022';
+    } else if (normalized === 'openai') {
+      const key = apiKey || this.configService.get<string>('OPENAI_API_KEY');
+      if (!key) {
+        throw new BadRequestException('OpenAI API key is required');
+      }
+      tempProvider = new OpenAIProvider(key);
+      testModel = testModel || 'gpt-4o-mini';
+    } else if (normalized === 'gemini') {
+      const key = apiKey || this.configService.get<string>('GEMINI_API_KEY');
+      if (!key) {
+        throw new BadRequestException('Gemini API key is required');
+      }
+      tempProvider = new GeminiProvider(key);
+      testModel = testModel || 'gemini-1.5-flash';
+    } else if (normalized === 'ollama') {
+      const url =
+        ollamaUrl ||
+        this.configService.get<string>('OLLAMA_BASE_URL') ||
+        'http://localhost:11434';
+      const defaultModel =
+        this.configService.get<string>('OLLAMA_MODEL') || 'llama3';
+      testModel = testModel || defaultModel;
+      tempProvider = new OllamaProvider(url, testModel);
+    } else {
+      throw new BadRequestException(`Unknown provider '${providerName}'`);
+    }
+
+    try {
+      const pingMessage: ChatMessage[] = [{ role: 'user', content: 'Ping' }];
+      const result = await tempProvider.chat(pingMessage, {
+        model: testModel,
+        maxTokens: 10,
+      });
+      const latencyMs = Date.now() - startTime;
+      return {
+        success: true,
+        provider: normalized,
+        model: testModel,
+        latencyMs,
+        message: `Connected successfully (${result.slice(0, 20).trim() || 'OK'})`,
+      };
+    } catch (err: any) {
+      const latencyMs = Date.now() - startTime;
+      return {
+        success: false,
+        provider: normalized,
+        model: testModel || 'default',
+        latencyMs,
+        message: err?.message || 'Connection test failed',
+      };
+    }
   }
 }

@@ -13,12 +13,24 @@ import { AIService } from './ai.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ChatDto } from './dto/chat.dto';
 import { ActionDto } from './dto/action.dto';
+import { TestConnectionDto } from './dto/test-connection.dto';
 import { Observable } from 'rxjs';
 
 @Controller('ai')
 @UseGuards(JwtAuthGuard)
 export class AIController {
   constructor(private readonly aiService: AIService) {}
+
+  @Post('test-connection')
+  @HttpCode(HttpStatus.OK)
+  async testConnection(@Body() dto: TestConnectionDto) {
+    return this.aiService.testProviderConnection(
+      dto.provider,
+      dto.apiKey,
+      dto.ollamaUrl,
+      dto.model,
+    );
+  }
 
   @Post('chat')
   @HttpCode(HttpStatus.OK)
