@@ -16,14 +16,17 @@ interface CodeBlockProps {
 
 const CodeBlock: React.FC<CodeBlockProps> = ({ language, code }) => {
   const [copied, setCopied] = useState(false);
-  const [applied, setApplied] = useState(false);
+  const [applied, setApplied] = useState<'replace' | 'cursor' | 'new' | null>(null);
 
   const openTabs = useEditorStore((s) => s.openTabs);
   const activeTabId = useEditorStore((s) => s.activeTabId);
   const updateContent = useEditorStore((s) => s.updateContent);
+  const insertCodeAtCursor = useEditorStore((s) => s.insertCodeAtCursor);
+  const openCodeInNewTab = useEditorStore((s) => s.openCodeInNewTab);
   const addToast = useToastStore((s) => s.addToast);
 
   const activeTab = openTabs.find((t) => t.id === activeTabId);
+  const lineCount = code.split('\n').length;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(code);
@@ -31,44 +34,108 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ language, code }) => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleApplyToEditor = () => {
+  const handleInsertAtCursor = () => {
+    insertCodeAtCursor(code);
+    setApplied('cursor');
+    setTimeout(() => setApplied(null), 2000);
+  };
+
+  const handleReplaceActiveTab = () => {
     if (!activeTabId || !activeTab) {
-      addToast('No active editor tab to apply code to', 'info');
+      openCodeInNewTab(code, language);
       return;
     }
     updateContent(activeTabId, code);
-    setApplied(true);
-    addToast(`Applied code to ${activeTab.name}`, 'success');
-    setTimeout(() => setApplied(false), 2500);
+    setApplied('replace');
+    addToast(`Replaced content in ${activeTab.name}`, 'success');
+    setTimeout(() => setApplied(null), 2000);
+  };
+
+  const handleOpenInNewTab = () => {
+    openCodeInNewTab(code, language);
+    setApplied('new');
+    setTimeout(() => setApplied(null), 2000);
   };
 
   return (
-    <div className="my-2.5 overflow-hidden rounded-lg border border-slate-700/70 bg-[#0b0f17] font-mono text-xs shadow-md">
+    <div className="my-3 overflow-hidden rounded-xl border border-slate-700/60 bg-[#0b0f17] font-mono text-xs shadow-lg ring-1 ring-white/5">
       {/* Header bar */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-[#141a27] border-b border-slate-800 text-slate-400">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-blue-400">
-          {language || 'code'}
-        </span>
+      <div className="flex items-center justify-between px-3.5 py-1.5 bg-[#121722] border-b border-slate-800/80 text-slate-400">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-purple-400 bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.5 rounded">
+            {language || 'code'}
+          </span>
+          <span className="text-[10px] text-slate-500">
+            {lineCount} {lineCount === 1 ? 'line' : 'lines'}
+          </span>
+        </div>
+
         <div className="flex items-center space-x-1.5">
-          {/* Apply to Editor Button */}
+          {/* Insert at Cursor Button */}
           <button
-            onClick={handleApplyToEditor}
-            className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 border border-blue-500/30 transition-all"
-            title="Replace active tab content with this code"
+            onClick={handleInsertAtCursor}
+            className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-blue-600/20 hover:bg-blue-600/35 text-blue-300 border border-blue-500/30 transition-all active:scale-95"
+            title="Insert snippet directly at current cursor in active editor"
           >
-            {applied ? (
+            {applied === 'cursor' ? (
               <>
                 <svg className="w-3 h-3 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                <span className="text-emerald-400 font-medium">Applied!</span>
+                <span className="text-emerald-400 font-medium">Inserted</span>
               </>
             ) : (
               <>
                 <svg className="w-3 h-3 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
                 </svg>
-                <span>Apply to Editor</span>
+                <span>Insert at Cursor</span>
+              </>
+            )}
+          </button>
+
+          {/* Replace Active Tab Button */}
+          <button
+            onClick={handleReplaceActiveTab}
+            className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-purple-600/20 hover:bg-purple-600/35 text-purple-300 border border-purple-500/30 transition-all active:scale-95"
+            title="Replace entire active tab content with this code"
+          >
+            {applied === 'replace' ? (
+              <>
+                <svg className="w-3 h-3 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="text-emerald-400 font-medium">Replaced</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-3 h-3 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span>Replace Tab</span>
+              </>
+            )}
+          </button>
+
+          {/* New Tab Button */}
+          <button
+            onClick={handleOpenInNewTab}
+            className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-all active:scale-95"
+            title="Open code in a new editor tab"
+          >
+            {applied === 'new' ? (
+              <>
+                <svg className="w-3 h-3 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="text-emerald-400 font-medium">Opened</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                <span>New Tab</span>
               </>
             )}
           </button>
@@ -76,7 +143,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ language, code }) => {
           {/* Copy Button */}
           <button
             onClick={handleCopy}
-            className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded hover:bg-slate-800 hover:text-white transition-colors text-slate-400 border border-slate-700/60"
+            className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md hover:bg-slate-800 hover:text-white transition-colors text-slate-400 border border-slate-700/60 active:scale-95"
             title="Copy code to clipboard"
           >
             {copied ? (
@@ -84,7 +151,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ language, code }) => {
                 <svg className="w-3 h-3 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                <span className="text-emerald-400">Copied!</span>
+                <span className="text-emerald-400">Copied</span>
               </>
             ) : (
               <>
@@ -104,7 +171,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ language, code }) => {
       </div>
 
       {/* Code body */}
-      <pre className="p-3 overflow-x-auto text-slate-200 leading-relaxed whitespace-pre font-mono text-[12px] scrollbar-thin">
+      <pre className="p-3.5 overflow-x-auto text-slate-200 leading-relaxed whitespace-pre font-mono text-[12px] scrollbar-thin selection:bg-purple-900/50">
         <code>{code}</code>
       </pre>
     </div>
