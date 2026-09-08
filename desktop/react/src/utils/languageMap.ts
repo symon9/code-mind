@@ -144,3 +144,40 @@ export function getLanguageDisplayName(languageId: string): string {
 
   return displayNames[languageId] || languageId.charAt(0).toUpperCase() + languageId.slice(1);
 }
+
+/**
+ * Returns a common file extension for a given language identifier.
+ */
+export function getLanguageExtension(languageId?: string): string {
+  if (!languageId) return 'txt';
+  const lang = languageId.toLowerCase();
+  const extMap: Record<string, string> = {
+    typescript: 'ts',
+    javascript: 'js',
+    python: 'py',
+    html: 'html',
+    css: 'css',
+    scss: 'scss',
+    json: 'json',
+    markdown: 'md',
+    yaml: 'yaml',
+    yml: 'yaml',
+    shell: 'sh',
+    bash: 'sh',
+    rust: 'rs',
+    go: 'go',
+    java: 'java',
+    csharp: 'cs',
+    cpp: 'cpp',
+    c: 'c',
+    ruby: 'rb',
+    php: 'php',
+    sql: 'sql',
+    graphql: 'graphql',
+    dockerfile: 'dockerfile',
+    powershell: 'ps1',
+    xml: 'xml',
+  };
+  return extMap[lang] || 'ts';
+}
+
