@@ -1,6 +1,11 @@
 appId: com.codemind.desktop
 productName: CodeMind
 electronVersion: 43.0.0
+publish:
+  provider: github
+  owner: symon9
+  repo: code-mind
+  releaseType: release
 directories:
   output: release
   buildResources: build

@@ -16,4 +16,17 @@ contextBridge.exposeInMainWorld('codemind', {
     getVersion: (): Promise<string> => ipcRenderer.invoke('app:getVersion'),
     platform: (): Promise<string> => ipcRenderer.invoke('app:platform'),
   },
+  updater: {
+    checkForUpdates: (): Promise<{ status: string; version?: string; error?: string; message?: string }> =>
+      ipcRenderer.invoke('updater:check'),
+    quitAndInstall: (): Promise<void> => ipcRenderer.invoke('updater:quitAndInstall'),
+    onStatusChange: (callback: (payload: any) => void) => {
+      const listener = (_event: any, payload: any) => callback(payload);
+      ipcRenderer.on('updater:status', listener);
+      return () => {
+        ipcRenderer.removeListener('updater:status', listener);
+      };
+    },
+  },
 });
+

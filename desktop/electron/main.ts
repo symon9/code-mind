@@ -1,46 +1,11 @@
 import { app, BrowserWindow, shell } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
-import { autoUpdater } from 'electron-updater';
 import { registerIpcHandlers } from './ipcHandlers';
 import { setupMenu } from './menu';
+import { setupAutoUpdater } from './updater';
 
 let mainWindow: BrowserWindow | null = null;
-
-function setupAutoUpdater(): void {
-  autoUpdater.autoDownload = false;
-
-  autoUpdater.on('checking-for-update', () => {
-    console.log('[AutoUpdater] Checking for update...');
-  });
-
-  autoUpdater.on('update-available', (info: any) => {
-    console.log('[AutoUpdater] Update available:', info?.version);
-  });
-
-  autoUpdater.on('update-not-available', (info: any) => {
-    console.log('[AutoUpdater] Update not available:', info?.version);
-  });
-
-  autoUpdater.on('error', (err: any) => {
-    console.error('[AutoUpdater] Error in auto-updater:', err);
-  });
-
-  autoUpdater.on('download-progress', (progressObj: any) => {
-    console.log(
-      `[AutoUpdater] Download speed: ${progressObj.bytesPerSecond} - Downloaded ${progressObj.percent}%`
-    );
-  });
-
-  autoUpdater.on('update-downloaded', (info: any) => {
-    console.log('[AutoUpdater] Update downloaded:', info?.version);
-  });
-
-  // Stub call for auto updater check
-  autoUpdater.checkForUpdatesAndNotify().catch((err: any) => {
-    console.log('[AutoUpdater] Auto-updater check stub handled:', err.message);
-  });
-}
 
 function createWindow(): void {
   const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
@@ -94,7 +59,7 @@ app.whenReady().then(() => {
   registerIpcHandlers();
   setupMenu(() => mainWindow);
   createWindow();
-  setupAutoUpdater();
+  setupAutoUpdater(() => mainWindow);
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
