@@ -1,6 +1,16 @@
 # 🧠 CodeMind
 
+[![Release](https://img.shields.io/github/v/release/symon9/code-mind?color=8b5cf6&label=Desktop%20Release)](https://github.com/symon9/code-mind/releases)
+[![Backend Status](https://img.shields.io/badge/Backend-Live%20on%20Render-10b981)](https://code-mind-k63e.onrender.com/health)
+[![Database](https://img.shields.io/badge/PostgreSQL-Neon.tech%20Pooler-0ea5e9)](https://neon.tech)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 **CodeMind** is a next-generation, cross-platform AI-native developer desktop IDE built with Electron, React, and NestJS. It seamlessly integrates multi-modal AI pair programming, workspace project file management, Monaco code editing, and intelligent context-aware chat to supercharge software engineering workflows.
+
+- 📥 **[Download Latest Windows Installer (v1.0.0)](https://github.com/symon9/code-mind/releases/latest)**
+- 📐 **[Comprehensive Architecture Specification](docs/ARCHITECTURE.md)**
+- 🤖 **[AI Agent Guide & Skills (AGENTS.md)](AGENTS.md)**
+- 🚀 **[Production Release & Deployment Guide](RELEASE.md)**
 
 ---
 
@@ -167,16 +177,6 @@ code-mind/
 ├── .prettierrc                # Code formatting configuration
 └── package.json               # Root monorepo workspace configuration
 ```
-
----
-
-## 🗺️ Roadmap & Architecture Phases
-
-- [x] **Phase 1 — Core Architecture**: Monorepo scaffolding, Monaco Editor integration, File Tree explorer, and multi-tab layout.
-- [x] **Phase 2 — AI Orchestration**: Multi-provider LLM hub (Anthropic, OpenAI, Gemini, Ollama), streaming tokens, code explanations, refactoring, and inline generation.
-- [x] **Phase 3 — Data & Synchronization**: PostgreSQL schema, Prisma ORM, JWT authentication, user preferences, and project persistence.
-- [x] **Phase 4 — Desktop Deep Integration**: Native IPC bridge, custom OS menus, file system watchers, auto-updater, and keyboard shortcuts.
-- [x] **Phase 5 — Packaging, Containerization & CI/CD**: Multi-stage Docker deployment, `electron-builder` cross-platform installers, and automated test pipelines.
 
 ---
 
