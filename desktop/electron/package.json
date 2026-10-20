@@ -1,12 +1,16 @@
 {
   "name": "@codemind/electron",
   "version": "1.0.0",
+  "description": "CodeMind Desktop AI Code Editor",
+  "author": "CodeMind",
   "private": true,
   "main": "dist/main.js",
   "scripts": {
     "build": "tsc",
     "dev": "tsc && electron .",
-    "start": "electron ."
+    "start": "electron .",
+    "pack": "tsc && electron-builder --dir",
+    "dist": "tsc && electron-builder"
   },
   "dependencies": {
     "@codemind/shared": "*",
@@ -14,7 +18,8 @@
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
-    "electron": "^43.0.0",
+    "electron": "43.0.0",
+    "electron-builder": "^24.13.3",
     "typescript": "~5.6.2"
   }
 }

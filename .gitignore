@@ -19,6 +19,7 @@ dist
 dist-electron
 dist-build
 renderer
+release
 build
 out
 *.tsbuildinfo
