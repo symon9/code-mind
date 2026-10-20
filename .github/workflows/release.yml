@@ -41,6 +41,7 @@ jobs:
         run: npm run build:electron
 
       - name: Package & Publish to GitHub Releases
-        run: npx electron-builder --project desktop/electron --config desktop/electron/electron-builder.yml --publish always
+        working-directory: desktop/electron
+        run: npx electron-builder --publish always
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
