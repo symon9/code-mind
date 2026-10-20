@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type SettingsTab = 'editor' | 'appearance' | 'ai' | 'shortcuts';
+export type SettingsTab = 'editor' | 'appearance' | 'ai' | 'shortcuts' | 'updates';
 
 // ─── Store Interface ──────────────────────────────────────────────────────────
 

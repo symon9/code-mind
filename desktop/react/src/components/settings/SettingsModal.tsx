@@ -4,7 +4,7 @@ import { useSettingsStore } from '../../stores/useSettingsStore';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { useToastStore } from '../../stores/useToastStore';
 import { patchUserPreferencesApi, testAiConnectionApi } from '../../utils/api';
-import type { AIProvider, Theme } from '../../types';
+import type { AIProvider, Theme, UpdateStatusPayload } from '../../types';
 import logoImg from '../../assets/logo';
 
 export const SettingsModal: React.FC = () => {
@@ -36,6 +36,50 @@ export const SettingsModal: React.FC = () => {
   const [testResults, setTestResults] = useState<
     Record<string, { loading: boolean; success?: boolean; message?: string }>
   >({});
+
+  // Auto-Update State
+  const [appVersion, setAppVersion] = useState<string>('1.0.0');
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatusPayload | null>(null);
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+
+  useEffect(() => {
+    if (window.codemind?.app?.getVersion) {
+      window.codemind.app.getVersion().then((v) => v && setAppVersion(v));
+    }
+    if (window.codemind?.updater?.onStatusChange) {
+      const unsubscribe = window.codemind.updater.onStatusChange((payload) => {
+        setUpdateStatus(payload);
+        if (payload.status !== 'checking') {
+          setIsCheckingUpdate(false);
+        }
+      });
+      return unsubscribe;
+    }
+  }, []);
+
+  const handleCheckUpdates = async () => {
+    if (!window.codemind?.updater?.checkForUpdates) {
+      addToast('Updater is active in packaged desktop builds.', 'info');
+      return;
+    }
+    setIsCheckingUpdate(true);
+    try {
+      const res = await window.codemind.updater.checkForUpdates();
+      if (res.status === 'not-available' && res.message) {
+        addToast(res.message, 'info');
+        setIsCheckingUpdate(false);
+      }
+    } catch (err: any) {
+      setIsCheckingUpdate(false);
+      addToast(err?.message || 'Failed to check for updates', 'error');
+    }
+  };
+
+  const handleRestartAndInstall = () => {
+    if (window.codemind?.updater?.quitAndInstall) {
+      window.codemind.updater.quitAndInstall();
+    }
+  };
 
   // Sync state when modal opens
   useEffect(() => {
@@ -181,6 +225,7 @@ export const SettingsModal: React.FC = () => {
             <TabButton id="appearance" label="Appearance" active={activeTab === 'appearance'} onClick={() => setActiveTab('appearance')} icon="🎨" />
             <TabButton id="ai" label="AI Provider" active={activeTab === 'ai'} onClick={() => setActiveTab('ai')} icon="🤖" />
             <TabButton id="shortcuts" label="Shortcuts" active={activeTab === 'shortcuts'} onClick={() => setActiveTab('shortcuts')} icon="⌨️" />
+            <TabButton id="updates" label="Updates" active={activeTab === 'updates'} onClick={() => setActiveTab('updates')} icon="🚀" />
           </div>
 
           {/* Right Panel Content */}
@@ -515,6 +560,123 @@ export const SettingsModal: React.FC = () => {
                       </tr>
                     </tbody>
                   </table>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'updates' && (
+              <div className="space-y-5 animate-fade-in">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-accent-light border-b border-border pb-2">
+                  Application & Updates
+                </h3>
+
+                {/* Version card */}
+                <div className="p-4 rounded-xl bg-surface-200/50 border border-border flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <img src={logoImg} alt="CodeMind" className="w-10 h-10 rounded-xl p-1 bg-surface-300 border border-border shadow-sm" />
+                    <div>
+                      <h4 className="text-sm font-semibold text-text-primary">CodeMind Desktop</h4>
+                      <span className="text-xs text-text-muted font-mono">v{appVersion} • Channel: GitHub Releases</span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCheckUpdates}
+                    disabled={isCheckingUpdate || updateStatus?.status === 'downloading'}
+                    className="px-3.5 py-1.5 rounded-lg text-xs font-medium bg-accent hover:bg-accent-light text-white shadow-sm transition-all disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+                  >
+                    {isCheckingUpdate ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>Checking...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>🔄 Check for Updates</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Status alerts */}
+                {updateStatus?.status === 'checking' && (
+                  <div className="p-3 rounded-lg bg-surface-200/80 border border-border text-xs text-text-muted flex items-center gap-2">
+                    <div className="w-3.5 h-3.5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                    <span>Contacting GitHub Releases to check for newer versions...</span>
+                  </div>
+                )}
+
+                {updateStatus?.status === 'not-available' && (
+                  <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center gap-2">
+                    <span>✓</span>
+                    <span>You are running the latest version of CodeMind (v{appVersion}).</span>
+                  </div>
+                )}
+
+                {updateStatus?.status === 'available' && (
+                  <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span>🚀</span>
+                      <span>New version <strong>v{updateStatus.version}</strong> found! Downloading in background...</span>
+                    </div>
+                  </div>
+                )}
+
+                {updateStatus?.status === 'downloading' && (
+                  <div className="p-4 rounded-xl bg-surface-200/80 border border-border space-y-2">
+                    <div className="flex justify-between text-xs text-text-primary">
+                      <span>Downloading update package...</span>
+                      <span className="font-mono text-accent-light">{updateStatus.percent ? updateStatus.percent.toFixed(1) : 0}%</span>
+                    </div>
+                    <div className="w-full h-2 bg-surface-300 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-accent transition-all duration-200 rounded-full"
+                        style={{ width: `${Math.min(100, Math.max(0, updateStatus.percent || 0))}%` }}
+                      />
+                    </div>
+                    {updateStatus.bytesPerSecond && (
+                      <div className="text-[11px] text-text-muted font-mono">
+                        Speed: {(updateStatus.bytesPerSecond / 1024 / 1024).toFixed(2)} MB/s
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {updateStatus?.status === 'downloaded' && (
+                  <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-text-primary space-y-3">
+                    <div className="flex items-center gap-2 text-emerald-400 font-semibold">
+                      <span>🎉</span>
+                      <span>Version v{updateStatus.version || ''} downloaded and verified!</span>
+                    </div>
+                    <p className="text-text-muted text-[11px]">
+                      The update is verified and ready to install. CodeMind will close and reopen smoothly.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleRestartAndInstall}
+                      className="px-4 py-2 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span>⚡ Restart & Install Update Now</span>
+                    </button>
+                  </div>
+                )}
+
+                {updateStatus?.status === 'error' && (
+                  <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2">
+                    <span>✗</span>
+                    <span>{updateStatus.error || 'Unable to check for updates.'}</span>
+                  </div>
+                )}
+
+                {/* Release source information */}
+                <div className="p-4 rounded-xl bg-surface-200/30 border border-border space-y-2 text-xs">
+                  <h5 className="font-semibold text-text-primary">Release Registry</h5>
+                  <p className="text-text-muted">
+                    CodeMind receives signed cryptographic update feeds directly from GitHub:
+                  </p>
+                  <div className="font-mono text-accent-light text-[11px] select-all bg-surface-100 p-2 rounded-lg border border-border">
+                    https://github.com/symon9/code-mind/releases
+                  </div>
                 </div>
               </div>
             )}

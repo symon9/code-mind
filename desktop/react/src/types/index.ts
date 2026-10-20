@@ -81,11 +81,44 @@ export interface ContextMenuPosition {
   y: number;
 }
 
+export interface UpdateStatusPayload {
+  status: 'checking' | 'available' | 'not-available' | 'downloading' | 'downloaded' | 'error';
+  version?: string;
+  percent?: number;
+  bytesPerSecond?: number;
+  transferred?: number;
+  total?: number;
+  error?: string;
+}
+
+export interface CodemindApi {
+  fs?: {
+    readFile: (path: string) => Promise<string>;
+    writeFile: (path: string, content: string) => Promise<void>;
+    openDialog: () => Promise<string[]>;
+    openFolderDialog: () => Promise<string>;
+    saveDialog: (defaultName?: string) => Promise<string>;
+    readDir: (path: string) => Promise<FileNode[]>;
+  };
+  app?: {
+    getVersion: () => Promise<string>;
+    platform: () => Promise<string>;
+  };
+  updater?: {
+    checkForUpdates: () => Promise<{ status: string; version?: string; error?: string; message?: string }>;
+    quitAndInstall: () => Promise<void>;
+    onStatusChange: (callback: (payload: UpdateStatusPayload) => void) => () => void;
+  };
+}
+
 declare global {
   interface Window {
-    codemind?: any;
+    codemind?: CodemindApi;
+    codemindGetActiveSelection?: () => string;
+    codemindInsertSnippet?: (snippet: string) => void;
   }
 }
+
 
 
 

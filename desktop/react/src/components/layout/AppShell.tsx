@@ -72,6 +72,20 @@ export const AppShell: React.FC = () => {
   const [cursorLine, setCursorLine] = useState(1);
   const [cursorColumn, setCursorColumn] = useState(1);
 
+  // Background Auto-Update Ready Notification
+  const [downloadedUpdateVersion, setDownloadedUpdateVersion] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (window.codemind?.updater?.onStatusChange) {
+      const unsubscribe = window.codemind.updater.onStatusChange((payload) => {
+        if (payload.status === 'downloaded' && payload.version) {
+          setDownloadedUpdateVersion(payload.version);
+        }
+      });
+      return unsubscribe;
+    }
+  }, []);
+
   const handleCursorChange = useCallback((line: number, column: number) => {
     setCursorLine(line);
     setCursorColumn(column);
@@ -252,6 +266,34 @@ export const AppShell: React.FC = () => {
 
       {/* Toast Notifications */}
       <ToastContainer />
+
+      {/* Floating Auto-Update Ready Notification */}
+      {downloadedUpdateVersion && (
+        <div className="fixed bottom-8 right-6 z-40 bg-surface-100/95 border border-emerald-500/40 rounded-xl shadow-2xl p-3.5 backdrop-blur-md flex items-center gap-3 animate-slide-up">
+          <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+
+          </div>
+          <div>
+            <div className="text-xs font-semibold text-text-primary">Update Ready to Install</div>
+            <div className="text-[11px] text-text-muted">CodeMind v{downloadedUpdateVersion} has downloaded</div>
+          </div>
+          <div className="flex items-center gap-2 ml-2">
+            <button
+              onClick={() => window.codemind?.updater?.quitAndInstall?.()}
+              className="px-2.5 py-1 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white rounded-md shadow-sm transition-all cursor-pointer"
+            >
+              Restart
+            </button>
+            <button
+              onClick={() => setDownloadedUpdateVersion(null)}
+              className="p-1 text-text-muted hover:text-text-primary rounded text-xs cursor-pointer"
+              title="Dismiss"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
