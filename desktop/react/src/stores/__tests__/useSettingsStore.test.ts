@@ -21,8 +21,8 @@ describe('useSettingsStore', () => {
     useSettingsStore.getState().setTheme('light');
     expect(useSettingsStore.getState().theme).toBe('light');
 
-    useSettingsStore.getState().setTheme('solarized');
-    expect(useSettingsStore.getState().theme).toBe('solarized');
+    useSettingsStore.getState().setTheme('pitch-black');
+    expect(useSettingsStore.getState().theme).toBe('pitch-black');
   });
 
   it('clamps font size between min and max bounds', () => {
