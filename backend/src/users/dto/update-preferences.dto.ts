@@ -21,4 +21,20 @@ export class UpdatePreferencesDto {
   @IsString()
   @IsOptional()
   defaultLanguage?: string;
+
+  @IsString()
+  @IsOptional()
+  openaiApiKey?: string;
+
+  @IsString()
+  @IsOptional()
+  anthropicApiKey?: string;
+
+  @IsString()
+  @IsOptional()
+  geminiApiKey?: string;
+
+  @IsString()
+  @IsOptional()
+  ollamaUrl?: string;
 }

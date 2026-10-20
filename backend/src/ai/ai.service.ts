@@ -2,6 +2,7 @@ import {
   Injectable,
   InternalServerErrorException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
@@ -10,6 +11,7 @@ import { AnthropicProvider } from './providers/anthropic.provider';
 import { OpenAIProvider } from './providers/openai.provider';
 import { OllamaProvider } from './providers/ollama.provider';
 import { GeminiProvider } from './providers/gemini.provider';
+import { decryptText } from '../common/crypto.util';
 
 @Injectable()
 export class AIService {
@@ -43,9 +45,101 @@ export class AIService {
     this.providers.set('ollama', new OllamaProvider(ollamaUrl, ollamaModel));
   }
 
+  private async resolveProviderInstance(
+    userId: string,
+    providerName: string,
+    options?: AIOptions,
+  ): Promise<{ provider: IAIProvider; isUserKey: boolean } | null> {
+    const normalized = providerName.toLowerCase();
+
+    // 1. Explicit request-level key override (ephemeral BYOK)
+    if (options?.apiKey) {
+      if (normalized === 'anthropic') {
+        return { provider: new AnthropicProvider(options.apiKey), isUserKey: true };
+      }
+      if (normalized === 'openai') {
+        return { provider: new OpenAIProvider(options.apiKey), isUserKey: true };
+      }
+      if (normalized === 'gemini') {
+        return { provider: new GeminiProvider(options.apiKey), isUserKey: true };
+      }
+    }
+    if (normalized === 'ollama' && options?.ollamaUrl) {
+      return {
+        provider: new OllamaProvider(options.ollamaUrl, options.model || 'llama3'),
+        isUserKey: true,
+      };
+    }
+
+    // 2. User's saved BYOK preference key (encrypted at rest)
+    try {
+      const pref = await this.prisma.preference.findUnique({
+        where: { userId },
+      });
+      if (pref) {
+        if (normalized === 'openai' && (pref as any).openaiApiKey) {
+          const key = decryptText((pref as any).openaiApiKey);
+          if (key) return { provider: new OpenAIProvider(key), isUserKey: true };
+        }
+        if (normalized === 'anthropic' && (pref as any).anthropicApiKey) {
+          const key = decryptText((pref as any).anthropicApiKey);
+          if (key) return { provider: new AnthropicProvider(key), isUserKey: true };
+        }
+        if (normalized === 'gemini' && (pref as any).geminiApiKey) {
+          const key = decryptText((pref as any).geminiApiKey);
+          if (key) return { provider: new GeminiProvider(key), isUserKey: true };
+        }
+        if (normalized === 'ollama' && (pref as any).ollamaUrl) {
+          return {
+            provider: new OllamaProvider((pref as any).ollamaUrl, options?.model || 'llama3'),
+            isUserKey: true,
+          };
+        }
+      }
+    } catch {
+      // Ignore preference lookup error and continue to server key
+    }
+
+    // 3. Fall back to server environment key
+    const serverProvider = this.providers.get(normalized);
+    if (serverProvider) {
+      return { provider: serverProvider, isUserKey: false };
+    }
+
+    return null;
+  }
+
+  private async checkServerQuota(userId: string): Promise<void> {
+    if (typeof (this.prisma as any).aIRequest?.count !== 'function') {
+      return;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const count = await this.prisma.aIRequest.count({
+      where: {
+        userId,
+        createdAt: { gte: today },
+      },
+    });
+
+    const dailyLimit = parseInt(
+      this.configService.get<string>('AI_DAILY_FREE_LIMIT') || '50',
+      10,
+    );
+
+    if (count >= dailyLimit) {
+      throw new ForbiddenException(
+        `Daily free AI request limit reached (${dailyLimit}/day). Add your own API key in Settings -> AI to unlock unlimited requests.`,
+      );
+    }
+  }
+
   private async getProvidersToTry(
     userId: string,
     requestedProvider?: string,
+    options?: AIOptions,
   ): Promise<{ name: string; defaultModel: string }[]> {
     const allProvidersInfo = [
       { name: 'anthropic', defaultModel: 'claude-3-5-sonnet-20241022' },
@@ -56,7 +150,12 @@ export class AIService {
 
     if (requestedProvider) {
       const info = allProvidersInfo.find((p) => p.name === requestedProvider);
-      if (!info || !this.providers.has(requestedProvider)) {
+      const resolved = await this.resolveProviderInstance(
+        userId,
+        requestedProvider,
+        options,
+      );
+      if (!info || !resolved) {
         throw new InternalServerErrorException(
           `Requested AI provider '${requestedProvider}' is not configured or unavailable.`,
         );
@@ -79,22 +178,36 @@ export class AIService {
     const chain: { name: string; defaultModel: string }[] = [];
     const added = new Set<string>();
 
-    if (preferredProvider && this.providers.has(preferredProvider)) {
-      const prefInfo = allProvidersInfo.find(
-        (p) => p.name === preferredProvider,
+    if (preferredProvider) {
+      const resolved = await this.resolveProviderInstance(
+        userId,
+        preferredProvider,
+        options,
       );
-      if (prefInfo) {
-        chain.push(prefInfo);
-        added.add(preferredProvider);
+      if (resolved) {
+        const prefInfo = allProvidersInfo.find(
+          (p) => p.name === preferredProvider,
+        );
+        if (prefInfo) {
+          chain.push(prefInfo);
+          added.add(preferredProvider);
+        }
       }
     }
 
     for (const providerName of this.priorityChain) {
-      if (!added.has(providerName) && this.providers.has(providerName)) {
-        const info = allProvidersInfo.find((p) => p.name === providerName);
-        if (info) {
-          chain.push(info);
-          added.add(providerName);
+      if (!added.has(providerName)) {
+        const resolved = await this.resolveProviderInstance(
+          userId,
+          providerName,
+          options,
+        );
+        if (resolved) {
+          const info = allProvidersInfo.find((p) => p.name === providerName);
+          if (info) {
+            chain.push(info);
+            added.add(providerName);
+          }
         }
       }
     }
@@ -135,6 +248,7 @@ export class AIService {
     const providersToTry = await this.getProvidersToTry(
       userId,
       requestedProvider,
+      options,
     );
     if (providersToTry.length === 0) {
       throw new InternalServerErrorException(
@@ -145,7 +259,18 @@ export class AIService {
     let lastError: any = null;
     for (const providerInfo of providersToTry) {
       try {
-        const provider = this.providers.get(providerInfo.name)!;
+        const resolved = await this.resolveProviderInstance(
+          userId,
+          providerInfo.name,
+          options,
+        );
+        if (!resolved) continue;
+
+        if (!resolved.isUserKey) {
+          await this.checkServerQuota(userId);
+        }
+
+        const provider = resolved.provider;
         const model = this.mapModel(
           providerInfo.name,
           options.model || providerInfo.defaultModel,
@@ -208,6 +333,7 @@ export class AIService {
     const providersToTry = await this.getProvidersToTry(
       userId,
       requestedProvider,
+      options,
     );
     if (providersToTry.length === 0) {
       throw new InternalServerErrorException(
@@ -223,7 +349,18 @@ export class AIService {
 
     for (const providerInfo of providersToTry) {
       try {
-        const provider = this.providers.get(providerInfo.name)!;
+        const resolved = await this.resolveProviderInstance(
+          userId,
+          providerInfo.name,
+          options,
+        );
+        if (!resolved) continue;
+
+        if (!resolved.isUserKey) {
+          await this.checkServerQuota(userId);
+        }
+
+        const provider = resolved.provider;
         const model = this.mapModel(
           providerInfo.name,
           options.model || providerInfo.defaultModel,

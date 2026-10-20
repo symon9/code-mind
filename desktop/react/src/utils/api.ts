@@ -133,6 +133,7 @@ export async function patchUserPreferencesApi(
     ollamaUrl?: string;
     anthropicApiKey?: string;
     openaiApiKey?: string;
+    geminiApiKey?: string;
   }
 ) {
   const response = await fetch(`${API_BASE_URL}/users/me/preferences`, {
