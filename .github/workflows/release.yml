@@ -1,0 +1,46 @@
+name: Release CodeMind Desktop
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      release_notes:
+        description: 'Release summary and notes'
+        required: false
+        default: 'Automated CodeMind Desktop Release'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & Publish Release
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Monorepo Dependencies
+        run: npm ci
+
+      - name: Build React Renderer Bundle
+        run: npm run build:react
+        env:
+          VITE_API_URL: https://code-mind-k63e.onrender.com
+
+      - name: Build Electron Main Process
+        run: npm run build:electron
+
+      - name: Package & Publish to GitHub Releases
+        run: npx electron-builder --project desktop/electron --config desktop/electron/electron-builder.yml --publish always
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
