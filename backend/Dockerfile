@@ -1,32 +1,29 @@
-# Multi-stage Dockerfile for NestJS backend
+# Multi-stage Dockerfile for NestJS backend monorepo
 
 # --- Stage 1: Build Stage ---
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Install build dependencies if required
 RUN apk add --no-cache openssl
 
-# Copy package files
-COPY package*.json ./
-COPY tsconfig*.json ./
-COPY nest-cli.json ./
+# Copy monorepo manifests
+COPY package.json package-lock.json turbo.json ./
+COPY shared ./shared
+COPY backend ./backend
 
-# Install all dependencies (including devDependencies for build)
+# Install dependencies across workspaces
 RUN npm ci
 
-# Copy Prisma schema and generate client
-COPY prisma ./prisma
+# Generate Prisma client for backend
+WORKDIR /app/backend
 RUN npx prisma generate
 
-# Copy source code
-COPY src ./src
-
-# Build production bundle
+# Build backend production bundle
 RUN npm run build
 
-# Remove devDependencies to optimize production node_modules
+# Remove devDependencies for lean runtime
+WORKDIR /app
 RUN npm prune --production
 
 # --- Stage 2: Production Runtime Stage ---
@@ -39,14 +36,16 @@ RUN apk add --no-cache openssl
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Copy node_modules from builder
+# Copy node_modules & source workspaces
 COPY --from=builder /app/node_modules ./node_modules
-# Copy compiled application code
-COPY --from=builder /app/dist ./dist
-# Copy Prisma assets & migrations for runtime/migration capabilities
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/shared ./shared
+COPY --from=builder /app/backend/node_modules ./backend/node_modules
+COPY --from=builder /app/backend/dist ./backend/dist
+COPY --from=builder /app/backend/prisma ./backend/prisma
+COPY --from=builder /app/backend/package*.json ./backend/
+
+WORKDIR /app/backend
 
 EXPOSE 3000
 
-CMD ["node", "dist/main"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main"]
