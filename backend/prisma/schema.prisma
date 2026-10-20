@@ -94,6 +94,10 @@ model Preference {
   fontFamily      String
   aiProvider      String
   defaultLanguage String
+  openaiApiKey    String?
+  anthropicApiKey String?
+  geminiApiKey    String?
+  ollamaUrl       String?
 }
 
 model AIRequest {

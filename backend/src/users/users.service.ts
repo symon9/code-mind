@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdatePreferencesDto } from './dto/update-preferences.dto';
+import { encryptText, decryptText, maskApiKey } from '../common/crypto.util';
 
 @Injectable()
 export class UsersService {
@@ -26,7 +27,6 @@ export class UsersService {
   }
 
   async updateUserProfile(userId: string, name: string) {
-    // Check if user exists first to throw correct exception
     await this.getUserProfile(userId);
 
     return this.prisma.user.update({
@@ -42,11 +42,31 @@ export class UsersService {
     });
   }
 
+  private sanitizePreferences(pref: any) {
+    if (!pref) return pref;
+    const res = { ...pref };
+    if ('openaiApiKey' in pref) {
+      res.openaiApiKey = pref.openaiApiKey
+        ? maskApiKey(decryptText(pref.openaiApiKey))
+        : '';
+    }
+    if ('anthropicApiKey' in pref) {
+      res.anthropicApiKey = pref.anthropicApiKey
+        ? maskApiKey(decryptText(pref.anthropicApiKey))
+        : '';
+    }
+    if ('geminiApiKey' in pref) {
+      res.geminiApiKey = pref.geminiApiKey
+        ? maskApiKey(decryptText(pref.geminiApiKey))
+        : '';
+    }
+    return res;
+  }
+
   async getUserPreferences(userId: string) {
-    // Check if user exists
     await this.getUserProfile(userId);
 
-    return this.prisma.preference.upsert({
+    const pref = await this.prisma.preference.upsert({
       where: { userId },
       create: {
         userId,
@@ -56,13 +76,27 @@ export class UsersService {
         aiProvider: 'gemini',
         defaultLanguage: 'typescript',
       },
-      update: {}, // No changes if already exists
+      update: {},
     });
+
+    return this.sanitizePreferences(pref);
   }
 
   async updateUserPreferences(userId: string, dto: UpdatePreferencesDto) {
-    // Check if user exists
     await this.getUserProfile(userId);
+
+    const updateData: any = { ...dto };
+
+    // Encrypt any submitted API keys before storing
+    if (dto.openaiApiKey !== undefined) {
+      updateData.openaiApiKey = dto.openaiApiKey ? encryptText(dto.openaiApiKey) : null;
+    }
+    if (dto.anthropicApiKey !== undefined) {
+      updateData.anthropicApiKey = dto.anthropicApiKey ? encryptText(dto.anthropicApiKey) : null;
+    }
+    if (dto.geminiApiKey !== undefined) {
+      updateData.geminiApiKey = dto.geminiApiKey ? encryptText(dto.geminiApiKey) : null;
+    }
 
     const defaults = {
       theme: 'dark',
@@ -72,17 +106,26 @@ export class UsersService {
       defaultLanguage: 'typescript',
     };
 
-    return this.prisma.preference.upsert({
+    const createData: any = {
+      userId,
+      theme: dto.theme ?? defaults.theme,
+      fontSize: dto.fontSize ?? defaults.fontSize,
+      fontFamily: dto.fontFamily ?? defaults.fontFamily,
+      aiProvider: dto.aiProvider ?? defaults.aiProvider,
+      defaultLanguage: dto.defaultLanguage ?? defaults.defaultLanguage,
+    };
+
+    if (updateData.openaiApiKey !== undefined) createData.openaiApiKey = updateData.openaiApiKey;
+    if (updateData.anthropicApiKey !== undefined) createData.anthropicApiKey = updateData.anthropicApiKey;
+    if (updateData.geminiApiKey !== undefined) createData.geminiApiKey = updateData.geminiApiKey;
+    if (dto.ollamaUrl !== undefined) createData.ollamaUrl = dto.ollamaUrl;
+
+    const pref = await this.prisma.preference.upsert({
       where: { userId },
-      create: {
-        userId,
-        theme: dto.theme ?? defaults.theme,
-        fontSize: dto.fontSize ?? defaults.fontSize,
-        fontFamily: dto.fontFamily ?? defaults.fontFamily,
-        aiProvider: dto.aiProvider ?? defaults.aiProvider,
-        defaultLanguage: dto.defaultLanguage ?? defaults.defaultLanguage,
-      },
-      update: dto,
+      create: createData,
+      update: updateData,
     });
+
+    return this.sanitizePreferences(pref);
   }
 }

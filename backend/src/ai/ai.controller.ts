@@ -9,10 +9,12 @@ import {
   HttpStatus,
   MessageEvent,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { AIService } from './ai.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ChatDto } from './dto/chat.dto';
 import { ActionDto } from './dto/action.dto';
+import { TestConnectionDto } from './dto/test-connection.dto';
 import { Observable } from 'rxjs';
 
 @Controller('ai')
@@ -20,6 +22,19 @@ import { Observable } from 'rxjs';
 export class AIController {
   constructor(private readonly aiService: AIService) {}
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Post('test-connection')
+  @HttpCode(HttpStatus.OK)
+  async testConnection(@Body() dto: TestConnectionDto) {
+    return this.aiService.testProviderConnection(
+      dto.provider,
+      dto.apiKey,
+      dto.ollamaUrl,
+      dto.model,
+    );
+  }
+
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post('chat')
   @HttpCode(HttpStatus.OK)
   async chat(@Request() req: any, @Body() dto: ChatDto) {
@@ -32,6 +47,7 @@ export class AIController {
     );
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post('stream')
   @HttpCode(HttpStatus.OK)
   @Sse()
@@ -74,6 +90,7 @@ export class AIController {
     });
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post('actions')
   @HttpCode(HttpStatus.OK)
   async actions(@Request() req: any, @Body() dto: ActionDto) {

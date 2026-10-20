@@ -133,6 +133,7 @@ export async function patchUserPreferencesApi(
     ollamaUrl?: string;
     anthropicApiKey?: string;
     openaiApiKey?: string;
+    geminiApiKey?: string;
   }
 ) {
   const response = await fetch(`${API_BASE_URL}/users/me/preferences`, {
@@ -154,3 +155,42 @@ export async function patchUserPreferencesApi(
 
   return response.json();
 }
+
+/**
+ * AI Provider Connection Test API Request (POST /ai/test-connection)
+ */
+export async function testAiConnectionApi(
+  token: string,
+  params: {
+    provider: string;
+    apiKey?: string;
+    ollamaUrl?: string;
+    model?: string;
+  }
+): Promise<{
+  success: boolean;
+  provider: string;
+  model: string;
+  latencyMs: number;
+  message: string;
+}> {
+  const response = await fetch(`${API_BASE_URL}/ai/test-connection`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(params),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const parsed = parseApiError(data);
+    const err: any = new Error(parsed.globalError || 'Connection test failed');
+    err.parsed = parsed;
+    throw err;
+  }
+
+  return data;
+}
+

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { EditorTab } from '../types';
-import { detectLanguage } from '../utils/languageMap';
+import { detectLanguage, getLanguageExtension } from '../utils/languageMap';
 import { useToastStore } from './useToastStore';
 import { getWebFileHandle } from './useFileTreeStore';
 
@@ -21,6 +21,8 @@ interface EditorState {
 interface EditorActions {
   openFile: (path: string) => Promise<void>;
   createNewFile: () => void;
+  openCodeInNewTab: (code: string, language?: string, suggestedName?: string) => void;
+  insertCodeAtCursor: (code: string) => void;
   closeTab: (id: string) => void;
   closeAllTabs: () => void;
   updateContent: (id: string, content: string) => void;
@@ -93,6 +95,49 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
       openTabs: [...state.openTabs, newTab],
       activeTabId: id,
     }));
+  },
+
+  openCodeInNewTab: (code: string, language?: string, suggestedName?: string) => {
+    const ext = getLanguageExtension(language || 'typescript');
+    const lang = language || 'typescript';
+    const id = `untitled-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const name = suggestedName || `Snippet-${get().openTabs.length + 1}.${ext}`;
+    const newTab: EditorTab = {
+      id,
+      path: name,
+      name,
+      content: code,
+      isDirty: true,
+      language: lang,
+    };
+
+    set((state) => ({
+      openTabs: [...state.openTabs, newTab],
+      activeTabId: id,
+    }));
+    useToastStore.getState().addToast(`Opened snippet in new tab (${name})`, 'success');
+  },
+
+  insertCodeAtCursor: (code: string) => {
+    // If Monaco has attached global cursor injector, use it for seamless undo/redo
+    if (typeof (window as any).codemindInsertSnippet === 'function') {
+      (window as any).codemindInsertSnippet(code);
+      return;
+    }
+
+    // Fallback: append or replace in active tab
+    const { activeTabId, openTabs, updateContent } = get();
+    if (!activeTabId) {
+      get().openCodeInNewTab(code);
+      return;
+    }
+
+    const currentTab = openTabs.find((t) => t.id === activeTabId);
+    if (currentTab) {
+      const updated = currentTab.content ? `${currentTab.content}\n\n${code}` : code;
+      updateContent(activeTabId, updated);
+      useToastStore.getState().addToast(`Inserted code into ${currentTab.name}`, 'success');
+    }
   },
 
   openFile: async (path: string) => {

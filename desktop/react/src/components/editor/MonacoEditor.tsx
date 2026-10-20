@@ -12,6 +12,7 @@ import type { ChatMessage } from '../../types';
 declare global {
   interface Window {
     codemindGetActiveSelection?: () => string;
+    codemindInsertSnippet?: (code: string) => void;
   }
 }
 
@@ -77,7 +78,7 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({ onCursorChange }) =>
 
   const activeTab = openTabs.find((tab) => tab.id === activeTabId);
 
-  // Expose selection getter globally for AIPanel's Attach Code button
+  // Expose selection getter & snippet injector globally
   useEffect(() => {
     window.codemindGetActiveSelection = () => {
       if (!editorRef.current) return '';
@@ -85,10 +86,29 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({ onCursorChange }) =>
       if (!selection || selection.isEmpty()) return '';
       return editorRef.current.getModel()?.getValueInRange(selection) || '';
     };
+
+    window.codemindInsertSnippet = (code: string) => {
+      if (!editorRef.current) return;
+      const editorInstance = editorRef.current;
+      const selection = editorInstance.getSelection();
+      if (!selection) return;
+
+      editorInstance.executeEdits('codemind-ai', [
+        {
+          range: selection,
+          text: code,
+          forceMoveMarkers: true,
+        },
+      ]);
+      editorInstance.focus();
+      addToast('Inserted code at cursor', 'success');
+    };
+
     return () => {
       delete window.codemindGetActiveSelection;
+      delete window.codemindInsertSnippet;
     };
-  }, []);
+  }, [addToast]);
 
   const handleBeforeMount = useCallback((monaco: any) => {
     // 1. CodeMind Professional Dark Theme (#0e121b background)

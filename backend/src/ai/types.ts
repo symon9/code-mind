@@ -7,6 +7,8 @@ export class AIOptions {
   model?: string;
   temperature?: number;
   maxTokens?: number;
+  apiKey?: string;
+  ollamaUrl?: string;
 }
 
 export interface IAIProvider {

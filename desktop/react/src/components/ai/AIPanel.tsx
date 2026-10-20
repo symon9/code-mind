@@ -440,18 +440,26 @@ export const AIPanel: React.FC = () => {
 
           {/* Bottom Toolbar inside textarea box */}
           <div className="flex items-center justify-between px-2.5 py-1.5 border-t border-slate-800/80 bg-[#141a27]/60 rounded-b-xl">
-            {/* Active context button */}
-            <button
-              type="button"
-              onClick={handleAttachCode}
-              className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold rounded bg-slate-800 hover:bg-slate-700 text-blue-300 border border-slate-700 transition-colors"
-              title="Attach code snippet from active tab"
-            >
-              <svg className="w-3 h-3 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-              </svg>
-              <span>{activeTab ? `@${activeTab.name}` : '@Attach Code'}</span>
-            </button>
+            {/* Active context button & Token Estimator */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleAttachCode}
+                className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold rounded bg-slate-800 hover:bg-slate-700 text-blue-300 border border-slate-700 transition-colors"
+                title="Attach code snippet from active tab"
+              >
+                <svg className="w-3 h-3 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                </svg>
+                <span>{activeTab ? `@${activeTab.name}` : '@Attach Code'}</span>
+              </button>
+
+              {inputValue.trim().length > 0 && (
+                <span className="text-[10px] font-mono text-slate-400 bg-slate-800/70 border border-slate-700/60 px-1.5 py-0.5 rounded">
+                  ~{Math.ceil(inputValue.trim().length / 4)} tokens
+                </span>
+              )}
+            </div>
 
             {/* Send Button */}
             <button
@@ -461,7 +469,7 @@ export const AIPanel: React.FC = () => {
               className="
                 flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold
                 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-600
-                text-white transition-all shadow-sm shadow-blue-500/20
+                text-white transition-all shadow-sm shadow-blue-500/20 active:scale-95
               "
               title="Send Prompt (Enter)"
             >
