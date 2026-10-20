@@ -270,8 +270,10 @@ export const AppShell: React.FC = () => {
       {/* Floating Auto-Update Ready Notification */}
       {downloadedUpdateVersion && (
         <div className="fixed bottom-8 right-6 z-40 bg-surface-100/95 border border-emerald-500/40 rounded-xl shadow-2xl p-3.5 backdrop-blur-md flex items-center gap-3 animate-slide-up">
-          <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-
+          <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
           </div>
           <div>
             <div className="text-xs font-semibold text-text-primary">Update Ready to Install</div>

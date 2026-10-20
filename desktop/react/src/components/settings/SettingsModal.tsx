@@ -225,7 +225,17 @@ export const SettingsModal: React.FC = () => {
             <TabButton id="appearance" label="Appearance" active={activeTab === 'appearance'} onClick={() => setActiveTab('appearance')} icon="🎨" />
             <TabButton id="ai" label="AI Provider" active={activeTab === 'ai'} onClick={() => setActiveTab('ai')} icon="🤖" />
             <TabButton id="shortcuts" label="Shortcuts" active={activeTab === 'shortcuts'} onClick={() => setActiveTab('shortcuts')} icon="⌨️" />
-            <TabButton id="updates" label="Updates" active={activeTab === 'updates'} onClick={() => setActiveTab('updates')} icon="🚀" />
+            <TabButton
+              id="updates"
+              label="Updates"
+              active={activeTab === 'updates'}
+              onClick={() => setActiveTab('updates')}
+              icon={
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+              }
+            />
           </div>
 
           {/* Right Panel Content */}
@@ -592,7 +602,10 @@ export const SettingsModal: React.FC = () => {
                       </>
                     ) : (
                       <>
-                        <span>🔄 Check for Updates</span>
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        <span>Check for Updates</span>
                       </>
                     )}
                   </button>
@@ -616,7 +629,9 @@ export const SettingsModal: React.FC = () => {
                 {updateStatus?.status === 'available' && (
                   <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span>🚀</span>
+                      <svg className="w-4 h-4 text-blue-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
                       <span>New version <strong>v{updateStatus.version}</strong> found! Downloading in background...</span>
                     </div>
                   </div>
@@ -645,7 +660,9 @@ export const SettingsModal: React.FC = () => {
                 {updateStatus?.status === 'downloaded' && (
                   <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-text-primary space-y-3">
                     <div className="flex items-center gap-2 text-emerald-400 font-semibold">
-                      <span>🎉</span>
+                      <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
                       <span>Version v{updateStatus.version || ''} downloaded and verified!</span>
                     </div>
                     <p className="text-text-muted text-[11px]">
@@ -656,7 +673,10 @@ export const SettingsModal: React.FC = () => {
                       onClick={handleRestartAndInstall}
                       className="px-4 py-2 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
                     >
-                      <span>⚡ Restart & Install Update Now</span>
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      <span>Restart & Install Update Now</span>
                     </button>
                   </div>
                 )}
@@ -706,7 +726,7 @@ export const SettingsModal: React.FC = () => {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-const TabButton: React.FC<{ id: string; label: string; active: boolean; icon: string; onClick: () => void }> = ({
+const TabButton: React.FC<{ id: string; label: string; active: boolean; icon: React.ReactNode; onClick: () => void }> = ({
   label,
   active,
   icon,
