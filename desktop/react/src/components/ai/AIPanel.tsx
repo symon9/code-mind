@@ -6,6 +6,7 @@ import { useToastStore } from '../../stores/useToastStore';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { ChatMessage } from './ChatMessage';
 import { AIProviderSwitcher } from './AIProviderSwitcher';
+import { API_BASE_URL } from '../../utils/api';
 import type { ChatMessage as ChatMessageType } from '../../types';
 
 export const AIPanel: React.FC = () => {
@@ -157,31 +158,41 @@ export const AIPanel: React.FC = () => {
       .filter((m) => m.role !== 'system')
       .map((m) => ({ role: m.role, content: m.content }));
 
+    if (!token) {
+      const promptSignIn = `⚠️ **Sign In Required**\n\nYou need to be signed in to use the CodeMind AI Assistant.\n\nPlease click the blue **Sign In** button in the top navigation bar to create a free account or log in!`;
+      for (let i = 0; i < promptSignIn.length; i += 8) {
+        await new Promise((res) => setTimeout(res, 15));
+        appendToLastMessage(currentSessionId, promptSignIn.slice(i, i + 8));
+      }
+      setStreaming(false);
+      return;
+    }
+
     try {
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
       };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
 
-      const response = await fetch('/ai/stream', {
+      const payload = {
+        messages: conversationHistory,
+        provider,
+        options: {
+          model: provider === 'gemini' ? 'gemini-3.8-flash' : undefined,
+        },
+      };
+
+      const response = await fetch(`${API_BASE_URL}/ai/stream`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({
-          messages: conversationHistory,
-          provider,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok || !response.body) {
-        const chatRes = await fetch('/ai/chat', {
+        const chatRes = await fetch(`${API_BASE_URL}/ai/chat`, {
           method: 'POST',
           headers,
-          body: JSON.stringify({
-            messages: conversationHistory,
-            provider,
-          }),
+          body: JSON.stringify(payload),
         });
 
         if (!chatRes.ok) {
@@ -237,13 +248,18 @@ export const AIPanel: React.FC = () => {
           appendToLastMessage(currentSessionId, dataStr);
         }
       }
-    } catch (err) {
-      console.warn('[AIPanel] Streaming endpoint offline, executing fallback assistant response', err);
-      const fallbackText = `I analyzed your request using **${provider.toUpperCase()}**.\n\nHere is the generated code solution:\n\`\`\`typescript\n// CodeMind AI Assistant\nexport function solution() {\n  return "CodeMind AI Assistant ready";\n}\n\`\`\`\nClick **Apply to Editor** above to update your active tab directly!`;
+    } catch (err: any) {
+      console.warn('[AIPanel] AI request failed:', err);
+      let errorText = `⚠️ **AI Service Notice**: Unable to reach AI server.`;
+      if (err.message?.includes('401')) {
+        errorText = `⚠️ **Sign In Required**: Your session has expired or you are not signed in. Please click **Sign In** in the top bar to continue.`;
+      } else if (err.message) {
+        errorText += ` (${err.message}).`;
+      }
 
-      for (let i = 0; i < fallbackText.length; i += 6) {
-        await new Promise((res) => setTimeout(res, 25));
-        appendToLastMessage(currentSessionId, fallbackText.slice(i, i + 6));
+      for (let i = 0; i < errorText.length; i += 6) {
+        await new Promise((res) => setTimeout(res, 20));
+        appendToLastMessage(currentSessionId, errorText.slice(i, i + 6));
       }
     } finally {
       setStreaming(false);

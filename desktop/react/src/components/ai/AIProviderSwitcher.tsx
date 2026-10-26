@@ -3,6 +3,7 @@ import { useSettingsStore } from '../../stores/useSettingsStore';
 import { useAIStore } from '../../stores/useAIStore';
 import { useToastStore } from '../../stores/useToastStore';
 import { useAuthStore } from '../../stores/useAuthStore';
+import { API_BASE_URL } from '../../utils/api';
 import type { AIProvider } from '../../types';
 
 interface ProviderOption {
@@ -105,7 +106,7 @@ export const AIProviderSwitcher: React.FC<AIProviderSwitcherProps> = ({
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      await fetch('/users/me/preferences', {
+      await fetch(`${API_BASE_URL}/users/me/preferences`, {
         method: 'PATCH',
         headers,
         body: JSON.stringify({ aiProvider: provider }),

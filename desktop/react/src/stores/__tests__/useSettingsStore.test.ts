@@ -14,7 +14,7 @@ describe('useSettingsStore', () => {
     expect(state.wordWrap).toBe('on');
     expect(state.autoSave).toBe(true);
     expect(state.tabSize).toBe(2);
-    expect(state.aiProvider).toBe('openai');
+    expect(state.aiProvider).toBe('gemini');
   });
 
   it('updates theme correctly', () => {

@@ -262,6 +262,13 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   const isUser = message.role === 'user';
   const isSystem = message.role === 'system';
   const isAssistant = message.role === 'assistant';
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyResponse = () => {
+    navigator.clipboard.writeText(message.content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   if (isSystem) {
     return (
@@ -305,12 +312,37 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
             )}
             <span>{isUser ? 'You' : 'CodeMind AI'}</span>
           </div>
-          <span className="text-[10px] font-mono font-normal text-slate-500">
-            {new Date(message.timestamp).toLocaleTimeString([], {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </span>
+          <div className="flex items-center gap-2">
+            {isAssistant && message.content && (
+              <button
+                onClick={handleCopyResponse}
+                className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md bg-slate-800/60 hover:bg-slate-700/80 text-slate-400 hover:text-slate-200 border border-slate-700/50 transition-all active:scale-95"
+                title="Copy response to clipboard"
+              >
+                {copied ? (
+                  <>
+                    <svg className="w-3 h-3 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-emerald-400">Copied</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    <span>Copy</span>
+                  </>
+                )}
+              </button>
+            )}
+            <span className="text-[10px] font-mono font-normal text-slate-500">
+              {new Date(message.timestamp).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </span>
+          </div>
         </div>
 
         {/* Message Content */}

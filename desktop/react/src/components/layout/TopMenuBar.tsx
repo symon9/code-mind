@@ -46,10 +46,10 @@ export const TopMenuBar: React.FC = () => {
   return (
     <header
       ref={menuRef}
-      className="h-9 bg-[#111622] border-b border-slate-800/80 flex items-center justify-between px-3 text-xs select-none shrink-0 z-30 relative backdrop-blur-md"
+      className="h-9 bg-[#111622] border-b border-slate-800/80 flex items-center justify-between px-3 text-xs select-none shrink-0 z-30 relative backdrop-blur-md drag-region"
     >
       {/* Left section: App Brand + Menus */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 no-drag">
         {/* Brand Badge */}
         <div className="flex items-center gap-2 mr-3 group cursor-pointer" onClick={() => openSettings('appearance')}>
           <img
@@ -236,7 +236,7 @@ export const TopMenuBar: React.FC = () => {
       </div>
 
       {/* Center section: Workspace Search / Command Bar */}
-      <div className="absolute left-1/2 -translate-x-1/2 flex items-center">
+      <div className="absolute left-1/2 -translate-x-1/2 flex items-center no-drag">
         <button
           onClick={() => openSettings('shortcuts')}
           className="flex items-center gap-2 px-3 py-1 bg-[#182030] hover:bg-[#20293d] border border-slate-700/60 rounded-md text-xs text-slate-300 hover:text-white transition-all shadow-inner max-w-sm shrink truncate"
@@ -255,7 +255,7 @@ export const TopMenuBar: React.FC = () => {
       </div>
 
       {/* Right section: Sidebar Toggles & Profile */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5 no-drag pr-36">
         {/* Toggle Left Sidebar Button */}
         <button
           onClick={toggleSidebar}

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { AIProvider, ChatMessage, ChatSession } from '../types';
+import { useSettingsStore } from './useSettingsStore';
 
 // ─── Store Interface ──────────────────────────────────────────────────────────
 
@@ -49,8 +50,11 @@ const defaultSession: ChatSession = {
   createdAt: Date.now(),
 };
 
+// Read the persisted provider from SettingsStore so user's saved choice is respected
+const initialProvider = useSettingsStore.getState().aiProvider || 'openai';
+
 export const useAIStore = create<AIStore>((set, get) => ({
-  provider: 'openai',
+  provider: initialProvider,
   isStreaming: false,
   chatSessions: [defaultSession],
   activeSessionId: 'default',

@@ -29,7 +29,7 @@ const defaultSettings: AppSettings = {
   wordWrap: 'on',
   autoSave: true,
   tabSize: 2,
-  aiProvider: 'openai',
+  aiProvider: 'gemini',
   defaultLanguage: 'typescript',
   ollamaUrl: 'http://localhost:11434',
 };

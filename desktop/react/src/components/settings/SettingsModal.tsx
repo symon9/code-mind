@@ -3,6 +3,7 @@ import { useLayoutStore } from '../../stores/useLayoutStore';
 import { useSettingsStore } from '../../stores/useSettingsStore';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { useToastStore } from '../../stores/useToastStore';
+import { useAIStore } from '../../stores/useAIStore';
 import { patchUserPreferencesApi, testAiConnectionApi } from '../../utils/api';
 import type { AIProvider, Theme, UpdateStatusPayload } from '../../types';
 import logoImg from '../../assets/logo';
@@ -122,6 +123,7 @@ export const SettingsModal: React.FC = () => {
         provider,
         apiKey: key || undefined,
         ollamaUrl: provider === 'ollama' ? ollamaUrl : undefined,
+        model: provider === 'gemini' ? 'gemini-3.8-flash' : undefined,
       });
 
       setTestResults((prev) => ({
@@ -155,7 +157,7 @@ export const SettingsModal: React.FC = () => {
     setIsSaving(true);
 
     try {
-      // 1. Update frontend store
+      // 1. Update frontend stores
       settings.updateSettings({
         fontSize,
         fontFamily,
@@ -166,6 +168,7 @@ export const SettingsModal: React.FC = () => {
         aiProvider,
         ollamaUrl,
       });
+      useAIStore.getState().setProvider(aiProvider);
 
       // 2. If authenticated, PATCH to backend API
       if (token) {
