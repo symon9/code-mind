@@ -537,7 +537,7 @@ export class AIService {
         throw new BadRequestException('Gemini API key is required');
       }
       tempProvider = new GeminiProvider(key);
-      testModel = testModel || 'gemini-1.5-flash';
+      testModel = testModel || 'gemini-3.8-flash';
     } else if (normalized === 'ollama') {
       const url =
         ollamaUrl ||
