@@ -25,7 +25,6 @@ win:
       arch:
         - x64
   icon: assets/icons/icon.ico
-  signAndEditExecutable: false
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true

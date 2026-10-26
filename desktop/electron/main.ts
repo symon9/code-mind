@@ -10,14 +10,26 @@ let mainWindow: BrowserWindow | null = null;
 function createWindow(): void {
   const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
-  const iconPath = path.join(__dirname, '../assets/icons/icon.png');
+  const possibleIconPaths = [
+    path.join(__dirname, '../assets/icons/icon.ico'),
+    path.join(process.resourcesPath, 'assets/icons/icon.ico'),
+    path.join(__dirname, '../assets/icons/icon.png'),
+    path.join(process.resourcesPath, 'assets/icons/icon.png'),
+  ];
+  const iconPath = possibleIconPaths.find((p) => fs.existsSync(p));
 
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
     minWidth: 900,
     minHeight: 600,
-    icon: fs.existsSync(iconPath) ? iconPath : undefined,
+    icon: iconPath,
+    titleBarStyle: 'hidden',
+    titleBarOverlay: {
+      color: '#111622',
+      symbolColor: '#94a3b8',
+      height: 36,
+    },
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
