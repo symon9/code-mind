@@ -7,6 +7,7 @@ import { useLayoutStore } from '../../stores/useLayoutStore';
 import { useAIStore } from '../../stores/useAIStore';
 import { useToastStore } from '../../stores/useToastStore';
 import { useAuthStore } from '../../stores/useAuthStore';
+import { API_BASE_URL } from '../../utils/api';
 import type { ChatMessage } from '../../types';
 
 declare global {
@@ -260,7 +261,7 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({ onCursorChange }) =>
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const res = await fetch('/ai/actions', {
+      const res = await fetch(`${API_BASE_URL}/ai/actions`, {
         method: 'POST',
         headers,
         body: JSON.stringify({

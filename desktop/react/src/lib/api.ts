@@ -4,7 +4,7 @@ import type { AuthUser, ChatMessage } from '../types';
 
 // ─── Axios Instance ───────────────────────────────────────────────────────────
 
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+export const baseURL = import.meta.env.VITE_API_URL || 'https://code-mind-k63e.onrender.com';
 
 export const api = axios.create({
   baseURL,

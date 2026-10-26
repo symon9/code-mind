@@ -10,7 +10,7 @@ export async function* streamAI(
   options?: Record<string, any>,
   maxAttempts: number = 3
 ): AsyncGenerator<string, void, unknown> {
-  const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const baseURL = import.meta.env.VITE_API_URL || 'https://code-mind-k63e.onrender.com';
   let attempt = 0;
 
   while (attempt < maxAttempts) {

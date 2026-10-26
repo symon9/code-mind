@@ -1,6 +1,7 @@
 import type { AuthUser } from '../types';
 
-const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000';
+export const API_BASE_URL =
+  (import.meta as any).env?.VITE_API_URL || 'https://code-mind-k63e.onrender.com';
 
 export interface LoginResponse {
   accessToken: string;
